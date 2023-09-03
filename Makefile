@@ -3,8 +3,8 @@ SHELL=/usr/bin/bash
 all: start
 
 app:
-	@systemctl restart gunicorn
-	@systemctl restart gunicorn.socket
+	@systemctl restart gunicorn-pg
+	@systemctl restart gunicorn-pg.socket
 
 debug:
 	@python manage.py runserver 0.0.0.0:8080

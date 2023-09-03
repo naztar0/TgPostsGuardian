@@ -27,15 +27,14 @@ class Command(BaseCommand):
             if not options['host']:
                 handlers.main(phone_number)
                 return
-            if options['func']:
+            if options['func'] is not None:
                 handlers.main(phone_number, options['host'], options['func'])
             else:
                 for i in range(HOST_FUNC_COUNT):
-                    handlers.main(phone_number, options['host'])
                     if os.name == 'posix':
                         os.system(f'cd {BASE_DIR} && nohup venv/bin/python manage.py start {phone_number} --host --func {i} &')
                     elif os.name == 'nt':
-                        os.system(f'cd {BASE_DIR} && start /B venv/Scripts/python.exe manage.py start {phone_number} --host --func {i} > log.txt')
+                        os.system(f'cd {BASE_DIR} && start /B venv/Scripts/python.exe manage.py start {phone_number} --host --func {i}')
             return
         if os.name == 'posix':
             for i, phone_number in enumerate(USERBOT_PN_LIST):
@@ -47,6 +46,6 @@ class Command(BaseCommand):
                 if DEBUG:
                     os.system(f'cd {BASE_DIR} && .\\venv\\Scripts\\python.exe manage.py start {phone_number} {"--host" if i == 0 else ""}')
                 else:
-                    os.system(f'cd {BASE_DIR} && start /B venv/Scripts/python.exe manage.py start {phone_number} {"--host" if i == 0 else ""} > log.txt')
+                    os.system(f'cd {BASE_DIR} && start /B venv/Scripts/python.exe manage.py start {phone_number} {"--host" if i == 0 else ""}')
                 if i == 0:
                     sleep(5)
