@@ -43,12 +43,12 @@ class LogAdmin(admin.ModelAdmin):
     list_per_page = 25
 
     date_hierarchy = 'created'
-    search_fields = ['user__first_name', 'user__last_name', 'channel__channel_title']
+    search_fields = ['userbot__first_name', 'userbot__last_name', 'channel__channel_title']
     list_filter = ['type']
 
     def user_custom(self, obj):
-        if obj.user:
-            return format_html(f'<a href="/bot/user/?q={obj.user.user_id}">{obj.user.first_name}&nbsp;{obj.user.last_name}</a>')
+        if obj.userbot:
+            return format_html(f'<a href="/bot/user/?q={obj.userbot.user_id}">{obj.userbot.first_name}&nbsp;{obj.userbot.last_name}</a>')
         else:
             return '-'
     user_custom.short_description = 'User ID'
