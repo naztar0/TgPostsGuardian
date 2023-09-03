@@ -131,7 +131,7 @@ class App:
             messages = []
             for message in self.client.get_chat_history(
                     channel.v2_id, limit=100,
-                    offset_date=now - timedelta(days=preferences.Settings.delete_posts_after_days)
+                    offset_date=now - timedelta(days=channel.delete_posts_after_days)
             ):
                 messages.append(message.id)
             logging.info(f'Found {len(messages)} messages')
