@@ -65,17 +65,17 @@ class LogAdmin(admin.ModelAdmin):
 
 class ChannelAdmin(admin.ModelAdmin):
     list_display = ['channel_id', 'title', 'username', 'has_protected_content', 'delete_albums', 'change_username',
-                    'deletions_count_for_username_change', 'delete_posts_after_days', 'republish_today_posts',
+                    'history_days', 'deletions_count_for_username_change', 'delete_posts_after_days', 'republish_today_posts',
                     'track_posts_after_days', 'views_difference_for_deletion', 'allowed_languages']
     list_per_page = 25
-    list_editable = ['delete_albums', 'change_username', 'deletions_count_for_username_change', 'delete_posts_after_days',
+    list_editable = ['delete_albums', 'change_username', 'history_days', 'deletions_count_for_username_change', 'delete_posts_after_days',
                      'republish_today_posts', 'track_posts_after_days', 'views_difference_for_deletion', 'allowed_languages']
 
     search_fields = ['channel_id', 'title', 'username']
     list_filter = ['delete_albums', 'change_username', 'republish_today_posts']
 
     fieldsets = [
-        ('Parameters', {'fields': ['channel_id', 'delete_albums', 'change_username',
+        ('Parameters', {'fields': ['channel_id', 'delete_albums', 'change_username', 'history_days',
                                    'deletions_count_for_username_change', 'delete_posts_after_days',
                                    'republish_today_posts', 'track_posts_after_days', 'views_difference_for_deletion',
                                    'allowed_languages']}),
