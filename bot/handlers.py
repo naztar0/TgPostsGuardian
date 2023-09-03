@@ -152,7 +152,7 @@ class App:
                     continue
                 if message.date < now - timedelta(days=channel.track_posts_after_days):
                     if post := models.Post.objects.filter(channel=channel, post_id=message.id).first():
-                        if message.views * 100 / post.views > channel.views_difference_for_deletion:
+                        if (message.views - post.views) * 100 / post.views > channel.views_difference_for_deletion:
                             if message.media_group_id and channel.delete_albums:
                                 if message.media_group_id not in grouped_messages:
                                     grouped_messages[message.media_group_id] = message.get_media_group()

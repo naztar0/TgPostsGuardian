@@ -22,12 +22,14 @@ class Command(BaseCommand):
         if phone_number := options['phone_number']:
             logging.info(f'Starting {phone_number}')
             pid = os.getpid()
-            with open(f'{BASE_DIR}/pids/{phone_number}.pid', 'w') as f:
-                f.write(str(pid))
             if not options['host']:
+                with open(f'{BASE_DIR}/pids/{phone_number}.pid', 'w') as f:
+                    f.write(str(pid))
                 handlers.main(phone_number)
                 return
             if options['func'] is not None:
+                with open(f'{BASE_DIR}/pids/host{options["func"]}.pid', 'w') as f:
+                    f.write(str(pid))
                 handlers.main(phone_number, options['host'], options['func'])
             else:
                 for i in range(HOST_FUNC_COUNT):
