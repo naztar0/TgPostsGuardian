@@ -23,7 +23,7 @@ class UserBot(models.Model):
 class Log(models.Model):
     TYPES = ((types.Log.DELETION, '🗑️ Deletion'), (types.Log.USERNAME_CHANGE, '👤 Username change'))
     created = models.DateTimeField('🕐 Created, UTC', auto_now_add=True)
-    type = models.PositiveSmallIntegerField('Type', choices=TYPES)
+    type = models.CharField('Type', max_length=16, choices=TYPES)
     userbot = models.ForeignKey(UserBot, models.CASCADE)
     channel = models.ForeignKey('Channel', models.CASCADE, verbose_name='Channel', blank=True, null=True)
     post_date = models.DateTimeField('🕐 Post date, UTC', blank=True, null=True, default=None)
