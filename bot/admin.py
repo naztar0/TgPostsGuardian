@@ -51,7 +51,7 @@ class LogAdmin(admin.ModelAdmin):
             return format_html(f'<a href="/bot/user/?q={obj.userbot.user_id}">{obj.userbot.first_name}&nbsp;{obj.userbot.last_name}</a>')
         else:
             return '-'
-    user_custom.short_description = 'User ID'
+    user_custom.short_description = 'UserBot'
 
     def has_add_permission(self, *args, **kwargs):
         return False

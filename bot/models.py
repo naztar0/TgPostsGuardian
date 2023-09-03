@@ -42,6 +42,7 @@ class Channel(models.Model):
     title = models.CharField('Title', max_length=256, blank=True, null=True)
     username = models.CharField('@username', max_length=256, blank=True, null=True)
     has_protected_content = models.BooleanField('Has protected content', default=False)
+    history_days = models.PositiveSmallIntegerField('History days', default=30)
     delete_albums = models.BooleanField('Delete albums', default=True)
     change_username = models.BooleanField('Change username', default=True)
     deletions_count_for_username_change = models.PositiveSmallIntegerField('Deletions count for username change', default=10)

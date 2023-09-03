@@ -140,14 +140,13 @@ class App:
 
     def check_post_views(self):
         now = datetime.now(timezone.utc)
-        end_date = now.date() - timedelta(days=4)
         for channel in self.get_channels():
             logging.info(f'Checking channel {channel.channel_id}')
             single_messages: list[types.Message] = []
             grouped_messages: dict[str, list[types.Message]] = {}
             for message in self.client.get_chat_history(channel.v2_id):
                 message.date = message.date.replace(tzinfo=timezone.utc)
-                if message.date.date() < end_date:
+                if message.date.date() < now.date() - timedelta(days=channel.history_days):
                     break
                 if not message.views:
                     continue
