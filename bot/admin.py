@@ -110,15 +110,14 @@ class PostAdmin(admin.ModelAdmin):
 
 
 class LimitationAdmin(admin.ModelAdmin):
-    list_display = ['channel', 'views', 'start_date', 'end_date', 'no_start_date', 'no_end_date']
+    list_display = ['channel', 'views', 'start_date', 'end_date']
     list_display_links = None
     list_per_page = 25
 
     search_fields = ['channel']
-    list_filter = ['no_start_date', 'no_end_date']
 
     fieldsets = [
-        ('Parameters', {'fields': ['channel', 'views', 'start_date', 'end_date', 'no_start_date', 'no_end_date']}),
+        ('Parameters', {'fields': ['channel', 'views', 'start_date', 'end_date']}),
     ]
 
     def has_add_permission(self, *args, **kwargs):

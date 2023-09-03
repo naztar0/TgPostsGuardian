@@ -5,7 +5,7 @@ from envparse import env
 from dotenv import load_dotenv
 
 DEBUG = True
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.INFO if DEBUG else logging.WARNING)
 local_tz = pytz.timezone('Europe/Kiev')
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

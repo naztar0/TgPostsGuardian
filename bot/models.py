@@ -85,8 +85,6 @@ class Limitation(models.Model):
     views = models.PositiveBigIntegerField('Views')
     start_date = models.DateField('Start date, UTC', blank=True, null=True)
     end_date = models.DateField('End date, UTC', blank=True, null=True)
-    no_start_date = models.BooleanField('No start date', default=False)
-    no_end_date = models.BooleanField('No end date', default=False)
 
     def __str__(self):
         return str(self.views)

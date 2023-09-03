@@ -165,9 +165,9 @@ class App:
                     logging.info(f'Found message {message.text[:20]}')
                 logging.info(f'Found views {message.views}')
                 for limitation in models.Limitation.objects.filter(channel=channel):
-                    if limitation.no_start_date:
+                    if not limitation.start_date:
                         limitation.start_date = datetime(1970, 1, 1).date()
-                    if limitation.no_end_date:
+                    if not limitation.end_date:
                         limitation.end_date = now.date()
                     if limitation.start_date <= message.date.date() <= limitation.end_date and message.views > limitation.views:
                         if message.media_group_id and channel.delete_albums:
