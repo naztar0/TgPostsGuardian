@@ -146,11 +146,12 @@ class App:
             single_messages: list[types.Message] = []
             grouped_messages: dict[str, list[types.Message]] = {}
             for message in self.client.get_chat_history(channel.v2_id):
+                message.date = message.date.replace(tzinfo=timezone.utc)
                 if message.date.date() < end_date:
                     break
                 if not message.views:
                     continue
-                if message.date.date() < (now - timedelta(days=channel.track_posts_after_days)).date():
+                if message.date < now - timedelta(days=channel.track_posts_after_days):
                     if post := models.Post.objects.filter(channel=channel, post_id=message.id).first():
                         if message.views * 100 / post.views > channel.views_difference_for_deletion:
                             if message.media_group_id and channel.delete_albums:
