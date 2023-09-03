@@ -52,9 +52,9 @@ class App:
             if self.func == 0:
                 self.refresh_me()
                 self.refresh()
-                self.check_post_deletions()
+                loop_wrapper(self.check_post_deletions, 60, self)
             elif self.func == 1:
-                self.delete_old_posts()
+                loop_wrapper(self.delete_old_posts, 60 * 60, self)
             return
         self.refresh_me()
         time.sleep(5)  # wait for other bots to refresh themselves
