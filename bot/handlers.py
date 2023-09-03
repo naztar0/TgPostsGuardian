@@ -52,15 +52,15 @@ class App:
             if self.func == 0:
                 self.refresh_me()
                 self.refresh()
-                loop_wrapper(self.check_post_deletions, 60, self)
+                loop_wrapper(self.check_post_deletions, 60)
             elif self.func == 1:
-                loop_wrapper(self.delete_old_posts, 60 * 60, self)
+                loop_wrapper(self.delete_old_posts, 60 * 60)
             return
         self.refresh_me()
         time.sleep(5)  # wait for other bots to refresh themselves
         self.userbot = models.UserBot.objects.get(phone_number=self.phone_number)
         self.join_channels()
-        loop_wrapper(self.check_post_views, 10, self)
+        loop_wrapper(self.check_post_views, 10)
 
     def refresh(self):
         for user in models.UserBot.objects.all():
@@ -80,7 +80,7 @@ class App:
             'username': me.username,
             'first_name': me.first_name,
             'last_name': me.last_name,
-            'phone_number': me.phone_number
+            'phone_number': self.phone_number,
         })
 
     def join_channels(self):
