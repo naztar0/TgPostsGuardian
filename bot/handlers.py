@@ -177,7 +177,7 @@ class App:
                             single_messages.append(message)
             logging.info(f'Found {len(single_messages)} single messages and {len(grouped_messages)} grouped messages')
             for message in single_messages:
-                models.Log.objects.create(type=models.types.Log.DELETION, userbot=self.userbot, channel=channel, post_date=message.date)
+                models.Log.objects.create(type=models.types.Log.DELETION, userbot=self.userbot, channel=channel, post_date=message.date, post_views=message.views)
                 if channel.republish_today_posts and message.date.date() == now.date():
                     if channel.has_protected_content:
                         if file_id := utils.get_media_file_id(message):
@@ -190,7 +190,7 @@ class App:
             self.client.delete_messages(channel.v2_id, [message.id for message in single_messages])
             time.sleep(1)
             for grouped_message in grouped_messages.values():
-                models.Log.objects.create(type=models.types.Log.DELETION, userbot=self.userbot, channel=channel, post_date=grouped_message[0].date)
+                models.Log.objects.create(type=models.types.Log.DELETION, userbot=self.userbot, channel=channel, post_date=grouped_message[0].date, post_views=grouped_message[0].views)
                 if channel.republish_today_posts and grouped_message[0].date.date() == now.date():
                     # send only first media from group
                     if channel.has_protected_content:

@@ -38,7 +38,7 @@ class UserBotAdmin(admin.ModelAdmin):
 
 
 class LogAdmin(admin.ModelAdmin):
-    list_display = ['created', 'user_custom', 'type', 'channel', 'post_date']
+    list_display = ['created', 'user_custom', 'type', 'channel', 'post_date', 'post_views']
     list_display_links = None
     list_per_page = 25
 

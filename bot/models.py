@@ -27,6 +27,7 @@ class Log(models.Model):
     userbot = models.ForeignKey(UserBot, models.CASCADE)
     channel = models.ForeignKey('Channel', models.CASCADE, verbose_name='Channel', blank=True, null=True)
     post_date = models.DateTimeField('🕐 Post date, UTC', blank=True, null=True, default=None)
+    post_views = models.PositiveBigIntegerField('Post views', blank=True, null=True, default=None)
 
     def __str__(self):
         return str(self.type)
