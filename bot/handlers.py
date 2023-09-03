@@ -161,8 +161,6 @@ class App:
                             continue
                     else:
                         models.Post.objects.create(post_date=message.date, channel=channel, post_id=message.id, views=message.views)
-                if message.text:
-                    logging.info(f'Found message {message.text[:20]}')
                 logging.info(f'Found views {message.views}')
                 for limitation in models.Limitation.objects.filter(channel=channel):
                     if not limitation.start_date:
