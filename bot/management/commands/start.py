@@ -4,6 +4,8 @@ from time import sleep
 from django.core.management.base import BaseCommand
 from app.settings import BASE_DIR, USERBOT_PN_LIST, DEBUG, HOST_FUNC_COUNT
 from bot import handlers, login
+# noinspection PyUnresolvedReferences
+import sqlite3
 
 
 class Command(BaseCommand):
@@ -37,6 +39,8 @@ class Command(BaseCommand):
                         os.system(f'cd {BASE_DIR} && nohup venv/bin/python manage.py start {phone_number} --host --func {i} &')
                     elif os.name == 'nt':
                         os.system(f'cd {BASE_DIR} && start /B venv/Scripts/python.exe manage.py start {phone_number} --host --func {i}')
+                    if i == 0:
+                        sleep(1)
             return
         if os.name == 'posix':
             for i, phone_number in enumerate(USERBOT_PN_LIST):

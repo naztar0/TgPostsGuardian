@@ -1,10 +1,6 @@
 import logging
-import random
-import string
 import time
 from datetime import datetime, timedelta, timezone
-# noinspection PyUnresolvedReferences
-import sqlite3
 
 from preferences import preferences
 
@@ -36,19 +32,18 @@ class App(BaseApp):
     def start(self):
         self.client.start()
         for _ in self.client.get_dialogs(): pass
+        if not self.host or self.host and self.func == 0:
+            self.refresh_me()
+        self.userbot = models.UserBot.objects.get(phone_number=self.phone_number)
         if self.host:
             if self.func == 0:
-                self.refresh_me()
                 self.refresh()
                 utils.loop_wrapper(self.check_post_deletions, preferences.Settings.check_post_deletions_interval)
             elif self.func == 1:
                 utils.loop_wrapper(self.delete_old_posts, preferences.Settings.delete_old_posts_interval * 60)
-            return
-        self.refresh_me()
-        time.sleep(5)  # wait for other bots to refresh themselves
-        self.userbot = models.UserBot.objects.get(phone_number=self.phone_number)
-        self.join_channels()
-        utils.loop_wrapper(self.check_post_views, preferences.Settings.check_post_views_interval)
+        else:
+            self.join_channels()
+            utils.loop_wrapper(self.check_post_views, preferences.Settings.check_post_views_interval)
 
     def refresh(self):
         for user in models.UserBot.objects.all():
@@ -79,11 +74,10 @@ class App(BaseApp):
             logging.info(f'Joined {len(channels)} channels: {", ".join([channel.title for channel in channels])}')
 
     def change_username(self, channel: models.Channel):
-        username = channel.username[:-preferences.Settings.username_suffix_length]
-        new_username = username + ''.join(random.choices(string.digits, k=preferences.Settings.username_suffix_length))
+        new_username = utils.rand_username(channel.username)
         logging.info(f'Updating channel {channel.title} username to {new_username}')
         try:
-            self.client.set_chat_username(channel.id, new_username)
+            self.client.set_chat_username(channel.v2_id, new_username)
             channel.username = new_username
             channel.last_username_change = datetime.now(timezone.utc)
             channel.save()
@@ -110,8 +104,14 @@ class App(BaseApp):
         for channel in models.Channel.objects.all():
             daily_deletions_count = models.Log.objects.filter(channel=channel, type=models.types.Log.DELETION, success=True,
                                                               created__year=now.year, created__month=now.month, created__day=now.day).count()
-            if channel.deletions_count_for_username_change and daily_deletions_count >= channel.deletions_count_for_username_change:
-                if channel.last_username_change and channel.last_username_change > now - timedelta(minutes=preferences.Settings.username_change_cooldown):
+            logging.info(f'Checking channel {channel.title} with {daily_deletions_count} daily deletions')
+            changed_that_day = models.Log.objects.filter(channel=channel, type=models.types.Log.USERNAME_CHANGE, success=True,
+                                                         created__year=now.year, created__month=now.month, created__day=now.day).exists()
+            if not changed_that_day and \
+                    channel.deletions_count_for_username_change and \
+                    daily_deletions_count >= channel.deletions_count_for_username_change:
+                if channel.last_username_change and \
+                        channel.last_username_change > now - timedelta(minutes=preferences.Settings.username_change_cooldown):
                     continue
                 self.change_username(channel)
 

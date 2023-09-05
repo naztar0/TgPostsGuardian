@@ -2,10 +2,12 @@ import json
 import logging
 import random
 import time
+import string
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from pyrogram import types
 from pyrogram.errors import FloodWait
+from preferences import preferences
 
 base_dir = Path(__file__).parent
 temp_dir = base_dir / 'temp'
@@ -54,3 +56,12 @@ def get_languages_graph_views(graphs, exceptions, days=7):
                 restricted += curr
         total_views_list.append((str(date.date()), total, restricted))
     return total_views_list
+
+
+def rand_username(username):
+    sl = preferences.Settings.username_suffix_length or 1
+    base = username[:-sl]
+    while True:
+        new_username = base + ''.join(random.choices(string.digits, k=sl))
+        if new_username != username:
+            return new_username
