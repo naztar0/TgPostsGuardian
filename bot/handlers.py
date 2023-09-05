@@ -11,29 +11,17 @@ from preferences import preferences
 from pyrogram import Client
 from pyrogram import types
 from pyrogram.raw.types.chatlists import ChatlistInvite
-from pyrogram.errors import FloodWait
 from pyrogram.raw.functions.chatlists import JoinChatlistInvite, CheckChatlistInvite
 
 from app.settings import BASE_DIR, API_ID, API_HASH, USERBOT_PN_LIST
 from bot import models, utils
-
-
-def loop_wrapper(func, sleep_time, *args, **kwargs):
-    while True:
-        try:
-            func(*args, **kwargs)
-            time.sleep(random.randint(sleep_time, sleep_time + 16))
-        except FloodWait as e:
-            logging.warning(f'Flood wait {e.value} seconds')
-            time.sleep(e.value)
-        except Exception as e:
-            logging.error(e)
-            time.sleep(60)
+from bot.base import BaseApp
 
 
 # noinspection PyTypeChecker
-class App:
+class App(BaseApp):
     def __init__(self, phone_number: str, host: bool, func: int):
+        super().__init__()
         name = phone_number
         if host:
             name = f'host{func}'
@@ -52,15 +40,15 @@ class App:
             if self.func == 0:
                 self.refresh_me()
                 self.refresh()
-                loop_wrapper(self.check_post_deletions, 60)
+                utils.loop_wrapper(self.check_post_deletions, preferences.Settings.check_post_deletions_interval)
             elif self.func == 1:
-                loop_wrapper(self.delete_old_posts, 60 * 60)
+                utils.loop_wrapper(self.delete_old_posts, preferences.Settings.delete_old_posts_interval * 60)
             return
         self.refresh_me()
         time.sleep(5)  # wait for other bots to refresh themselves
         self.userbot = models.UserBot.objects.get(phone_number=self.phone_number)
         self.join_channels()
-        loop_wrapper(self.check_post_views, 10)
+        utils.loop_wrapper(self.check_post_views, preferences.Settings.check_post_views_interval)
 
     def refresh(self):
         for user in models.UserBot.objects.all():
@@ -96,7 +84,12 @@ class App:
         logging.info(f'Updating channel {channel.title} username to {new_username}')
         try:
             self.client.set_chat_username(channel.id, new_username)
+            channel.username = new_username
+            channel.last_username_change = datetime.now(timezone.utc)
+            channel.save()
+            models.Log.objects.create(type=models.types.Log.USERNAME_CHANGE, userbot=self.userbot, channel=channel)
         except Exception as e:
+            models.Log.objects.create(type=models.types.Log.USERNAME_CHANGE, userbot=self.userbot, channel=channel, success=False)
             logging.error(e)
             time.sleep(5)
 
@@ -115,14 +108,12 @@ class App:
     def check_post_deletions(self):
         now = datetime.now(timezone.utc)
         for channel in models.Channel.objects.all():
-            daily_deletions_count = models.Log.objects.filter(channel=channel, type=models.types.Log.DELETION,
+            daily_deletions_count = models.Log.objects.filter(channel=channel, type=models.types.Log.DELETION, success=True,
                                                               created__year=now.year, created__month=now.month, created__day=now.day).count()
             if daily_deletions_count >= channel.deletions_count_for_username_change and channel.change_username:
-                if models.Log.objects.filter(channel=channel, type=models.types.Log.USERNAME_CHANGE,
-                                             created__year=now.year, created__month=now.month, created__day=now.day).exists():
+                if channel.last_username_change > now - timedelta(minutes=preferences.Settings.username_change_cooldown):
                     continue
                 self.change_username(channel)
-                models.Log.objects.create(type=models.types.Log.USERNAME_CHANGE, userbot=self.userbot, channel=channel)
 
     def delete_old_posts(self):
         now = datetime.now(timezone.utc)
@@ -146,33 +137,46 @@ class App:
             grouped_messages: dict[str, list[types.Message]] = {}
             for message in self.client.get_chat_history(channel.v2_id):
                 message.date = message.date.replace(tzinfo=timezone.utc)
-                if message.date.date() < now.date() - timedelta(days=channel.history_days):
+                if message.date.date() < now.date() - timedelta(days=channel.history_days_limit):
                     break
                 if not message.views:
                     continue
-                if message.date < now - timedelta(days=channel.track_posts_after_days):
-                    if post := models.Post.objects.filter(channel=channel, post_id=message.id).first():
-                        if (message.views - post.views) * 100 / post.views > channel.views_difference_for_deletion:
+                logging.info(f'Found views {message.views}')
+                for limitation in models.Limitation.objects.filter(channel=channel):
+                    if not limitation.start_date:
+                        if limitation.start_after_days:
+                            limitation.start_date = now.date() - timedelta(days=limitation.start_after_days)
+                        else:
+                            limitation.start_date = datetime(1970, 1, 1).date()
+                    if not limitation.end_date:
+                        if limitation.end_after_days:
+                            limitation.end_date = now.date() - timedelta(days=limitation.end_after_days)
+                        else:
+                            limitation.end_date = now.date()
+                    logging.info(f'Checking limitation {limitation.start_date} - {limitation.end_date}')
+
+                    if limitation.start_date <= message.date.date() <= limitation.end_date:
+                        if limitation.views_for_deletion and message.views > limitation.views_for_deletion:
+                            logging.info(f'Found views {message.views} more than limitation {limitation.views_for_deletion}')
                             if message.media_group_id and channel.delete_albums:
                                 if message.media_group_id not in grouped_messages:
                                     grouped_messages[message.media_group_id] = message.get_media_group()
                             else:
                                 single_messages.append(message)
-                            continue
-                    else:
-                        models.Post.objects.create(post_date=message.date, channel=channel, post_id=message.id, views=message.views)
-                logging.info(f'Found views {message.views}')
-                for limitation in models.Limitation.objects.filter(channel=channel):
-                    if not limitation.start_date:
-                        limitation.start_date = datetime(1970, 1, 1).date()
-                    if not limitation.end_date:
-                        limitation.end_date = now.date()
-                    if limitation.start_date <= message.date.date() <= limitation.end_date and message.views > limitation.views:
-                        if message.media_group_id and channel.delete_albums:
-                            if message.media_group_id not in grouped_messages:
-                                grouped_messages[message.media_group_id] = message.get_media_group()
-                        else:
-                            single_messages.append(message)
+                        if limitation.views_difference_for_deletion:
+                            logging.info(f'Checking views difference {limitation.views_difference_for_deletion}')
+                            if post := models.Post.objects.filter(limitation=limitation, post_id=message.id).first():
+                                if (message.views - post.views) * 100 / post.views > limitation.views_difference_for_deletion:
+                                    logging.info(f'Found views difference {limitation.views_difference_for_deletion}')
+                                    if message.media_group_id and channel.delete_albums:
+                                        if message.media_group_id not in grouped_messages:
+                                            grouped_messages[message.media_group_id] = message.get_media_group()
+                                    else:
+                                        single_messages.append(message)
+                                    continue
+                            else:
+                                models.Post.objects.create(post_date=message.date, limitation=limitation, post_id=message.id, views=message.views)
+
             logging.info(f'Found {len(single_messages)} single messages and {len(grouped_messages)} grouped messages')
             for message in single_messages:
                 models.Log.objects.create(type=models.types.Log.DELETION, userbot=self.userbot, channel=channel, post_date=message.date, post_views=message.views)
@@ -190,8 +194,8 @@ class App:
             for grouped_message in grouped_messages.values():
                 models.Log.objects.create(type=models.types.Log.DELETION, userbot=self.userbot, channel=channel, post_date=grouped_message[0].date, post_views=grouped_message[0].views)
                 if channel.republish_today_posts and grouped_message[0].date.date() == now.date():
-                    # send only first media from group
                     if channel.has_protected_content:
+                        # send only first media from group
                         caption = list(filter(lambda x: x.text, grouped_message))
                         caption = caption[0].message if caption else ''
                         self.client.send_cached_media(channel.v2_id, utils.get_media_file_id(grouped_message[0]), caption)
