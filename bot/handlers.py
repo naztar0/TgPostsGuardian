@@ -110,7 +110,7 @@ class App(BaseApp):
         for channel in models.Channel.objects.all():
             daily_deletions_count = models.Log.objects.filter(channel=channel, type=models.types.Log.DELETION, success=True,
                                                               created__year=now.year, created__month=now.month, created__day=now.day).count()
-            if daily_deletions_count >= channel.deletions_count_for_username_change and channel.change_username:
+            if channel.deletions_count_for_username_change and daily_deletions_count >= channel.deletions_count_for_username_change:
                 if channel.last_username_change > now - timedelta(minutes=preferences.Settings.username_change_cooldown):
                     continue
                 self.change_username(channel)
