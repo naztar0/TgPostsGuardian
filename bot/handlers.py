@@ -6,7 +6,10 @@ from preferences import preferences
 
 from pyrogram import Client
 from pyrogram import types
+from pyrogram.raw.types import ChannelParticipantsAdmins
 from pyrogram.raw.types.chatlists import ChatlistInvite
+from pyrogram.raw.base.channels import ChannelParticipants
+from pyrogram.raw.functions.channels import GetParticipants
 from pyrogram.raw.functions.chatlists import JoinChatlistInvite, CheckChatlistInvite
 
 from app.settings import BASE_DIR, API_ID, API_HASH, USERBOT_PN_LIST
@@ -56,6 +59,17 @@ class App(BaseApp):
             channel.username = channel_api.username
             channel.has_protected_content = channel_api.has_protected_content
             channel.save()
+
+            cp: ChannelParticipants = self.client.invoke(
+                GetParticipants(channel=self.client.resolve_peer(channel.v2_id), filter=ChannelParticipantsAdmins(), offset=0, limit=100, hash=0)
+            )
+            admins = [admin.user_id for admin in cp.participants]
+            for user in models.UserBot.objects.all():
+                if user.user_id not in admins:
+                    privileges = types.ChatPrivileges(can_delete_messages=True, can_post_messages=True, can_edit_messages=True, can_change_info=True)
+                    self.client.promote_chat_member(channel.v2_id, user.user_id, privileges)
+                    logging.info(f'Promoted {user.user_id} to admin in {channel.title}')
+                    time.sleep(1)
 
     def refresh_me(self):
         me: types.User = self.client.get_me()
