@@ -19,6 +19,7 @@ class Command(BaseCommand):
         if options['init']:
             logging.info('Initializing')
             for i, phone_number in enumerate(USERBOT_PN_LIST):
+                print(i, phone_number)
                 login.main(phone_number, i == 0)
             return
         if phone_number := options['phone_number']:
