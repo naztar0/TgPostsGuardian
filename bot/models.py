@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from django.db import models
 from preferences.models import Preferences
 from bot import types
@@ -49,7 +50,7 @@ class Channel(models.Model):
     delete_albums = models.BooleanField('Delete albums', default=True)
     republish_today_posts = models.BooleanField('Republish today deleted posts', default=True)
     deletions_count_for_username_change = models.PositiveSmallIntegerField('Deletions count for username change', default=0)
-    deletions_count_for_username_change.help_text = ('If the number of deletions is less than this value, the username will not be changed\n'
+    deletions_count_for_username_change.help_text = ('If the number of deletions is less than this value, the username will not be changed<br>'
                                                      'If 0, the username will not be changed')
     delete_posts_after_days = models.PositiveSmallIntegerField('Delete all posts after days', default=90)
 
@@ -87,12 +88,44 @@ class Limitation(models.Model):
     views_difference_for_deletion = models.PositiveSmallIntegerField('Views difference for deletion, %', default=0)
     lang_stats_restrictions = models.BooleanField('Language stats restrictions', default=False)
     allowed_languages = models.CharField('Allowed languages', max_length=256, blank=True, null=True)
-    allowed_languages.help_text = ('List of allowed languages separated by spaces\n'
+    allowed_languages.help_text = ('List of allowed languages separated by spaces<br>'
                                    'If other languages views count is more than allowed views count, the post will be deleted')
     start_date = models.DateField('Start date, UTC', blank=True, null=True)
     end_date = models.DateField('End date, UTC', blank=True, null=True)
     start_after_days = models.PositiveIntegerField('Start after days', default=0)
     end_after_days = models.PositiveIntegerField('End after days', default=0)
+
+    @property
+    def priority(self):
+        if self.start_date and self.end_date:
+            return 1
+        elif self.start_date and self.end_after_days or self.start_after_days and self.end_date:
+            return 2
+        elif self.start_after_days and self.end_after_days:
+            return 3
+        elif self.start_date or self.end_date:
+            return 4
+        elif self.start_after_days or self.end_after_days:
+            return 5
+        return 6
+
+    @property
+    def start(self):
+        now_date = datetime.now(timezone.utc).date()
+        if self.start_date:
+            return self.start_date
+        if self.start_after_days:
+            return now_date - timedelta(days=self.start_after_days)
+        return datetime(1970, 1, 1).date()
+
+    @property
+    def end(self):
+        now_date = datetime.now(timezone.utc).date()
+        if self.end_date:
+            return self.end_date
+        if self.end_after_days:
+            return now_date - timedelta(days=self.end_after_days)
+        return now_date
 
     def __str__(self):
         return str(self.channel)

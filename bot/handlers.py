@@ -149,6 +149,7 @@ class App(BaseApp):
             logging.info(f'Checking channel {channel.channel_id}')
             single_messages: list[types.Message] = []
             grouped_messages: dict[str, list[types.Message]] = {}
+            limitations = list(models.Limitation.objects.filter(channel=channel).order_by('-created'))
             for message in self.client.get_chat_history(channel.v2_id):
                 message.date = message.date.replace(tzinfo=timezone.utc)
                 if message.date.date() < now.date() - timedelta(days=channel.history_days_limit):
@@ -156,20 +157,18 @@ class App(BaseApp):
                 if not message.views:
                     continue
                 logging.info(f'Found views {message.views}')
-                for limitation in models.Limitation.objects.filter(channel=channel):
-                    if not limitation.start_date:
-                        if limitation.start_after_days:
-                            limitation.start_date = now.date() - timedelta(days=limitation.start_after_days)
-                        else:
-                            limitation.start_date = datetime(1970, 1, 1).date()
-                    if not limitation.end_date:
-                        if limitation.end_after_days:
-                            limitation.end_date = now.date() - timedelta(days=limitation.end_after_days)
-                        else:
-                            limitation.end_date = now.date()
-                    logging.info(f'Checking limitation {limitation.start_date} - {limitation.end_date}')
-
-                    if limitation.start_date <= message.date.date() <= limitation.end_date:
+                for limitation in limitations:
+                    logging.info(f'Checking limitation {limitation.start} - {limitation.end}')
+                    if limitation.start <= message.date.date() <= limitation.end:
+                        skip = False
+                        for lim in limitations:
+                            if lim.start <= message.date.date() <= lim.end and lim.priority < limitation.priority:
+                                logging.info(f'Skipping limitation {limitation.start} - {limitation.end} with priority {limitation.priority} '
+                                             f'because it is inside {lim.start} - {lim.end} with priority {lim.priority}')
+                                skip = True
+                                break
+                        if skip:
+                            continue
                         if limitation.views_for_deletion and message.views > limitation.views_for_deletion:
                             logging.info(f'Found views {message.views} more than limitation {limitation.views_for_deletion}')
                             if message.media_group_id and channel.delete_albums:
