@@ -44,7 +44,7 @@ class LogAdmin(admin.ModelAdmin):
 
     date_hierarchy = 'created'
     search_fields = ['userbot__first_name', 'userbot__last_name', 'channel__channel_title']
-    list_filter = ['type', 'success']
+    list_filter = ['type', 'success', 'channel__title']
 
     def user_custom(self, obj):
         if obj.userbot:
@@ -71,7 +71,7 @@ class LogAdmin(admin.ModelAdmin):
 
 
 class ChannelAdmin(admin.ModelAdmin):
-    list_display = ['channel_id', 'title', 'username', 'has_protected_content', 'last_username_change', 'history_days_limit',
+    list_display = ['channel_id', 'title', 'username_custom', 'has_protected_content', 'last_username_change', 'history_days_limit',
                     'delete_albums', 'republish_today_posts', 'deletions_count_for_username_change', 'delete_posts_after_days']
     list_per_page = 25
 
@@ -82,6 +82,13 @@ class ChannelAdmin(admin.ModelAdmin):
         ('Parameters', {'fields': ['channel_id', 'history_days_limit', 'delete_albums', 'republish_today_posts',
                                    'deletions_count_for_username_change', 'delete_posts_after_days']}),
     ]
+
+    def username_custom(self, obj):
+        if obj.username:
+            return format_html(f'<a href="tg://resolve?domain={obj.username}">@{obj.username}</a>')
+        else:
+            return '-'
+    username_custom.short_description = '@username'
 
     def has_add_permission(self, *args, **kwargs):
         return True
@@ -98,7 +105,8 @@ class LimitationAdmin(admin.ModelAdmin):
                     'allowed_languages', 'start_date', 'end_date', 'start_after_days', 'end_after_days']
     list_per_page = 25
 
-    search_fields = ['channel']
+    search_fields = ['channel', 'channel__title']
+    list_filter = ['lang_stats_restrictions', 'channel__title']
 
     fieldsets = [
         ('Parameters', {'fields': ['channel', 'views_for_deletion', 'views_difference_for_deletion', 'lang_stats_restrictions',
