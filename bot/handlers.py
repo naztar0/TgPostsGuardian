@@ -162,7 +162,11 @@ class App(BaseApp):
                     if limitation.start <= message.date.date() <= limitation.end:
                         skip = False
                         for lim in limitations:
-                            if lim.start <= message.date.date() <= lim.end and lim.priority < limitation.priority:
+                            if (
+                                    lim.start <= message.date.date() <= lim.end and lim.priority < limitation.priority and
+                                    bool(lim.views_for_deletion) == bool(limitation.views_for_deletion) and
+                                    bool(lim.views_difference_for_deletion) == bool(limitation.views_difference_for_deletion)
+                            ):
                                 logging.info(f'Skipping limitation {limitation.start} - {limitation.end} with priority {limitation.priority} '
                                              f'because it is inside {lim.start} - {lim.end} with priority {lim.priority}')
                                 skip = True
