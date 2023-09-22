@@ -3,6 +3,7 @@ import logging
 import pytz
 from envparse import env
 from dotenv import load_dotenv
+from django.utils.translation import gettext_lazy as _
 
 DEBUG = True
 logging.basicConfig(level=logging.INFO if DEBUG else logging.WARNING)
@@ -68,6 +69,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
 
     'admin_reorder.middleware.ModelAdminReorder',
 ]
@@ -161,32 +163,32 @@ MEDIA_URL = '/media/'
 ADMIN_REORDER = [
     {
         'app': 'bot',
-        'label': 'Info',
+        'label': _('info'),
         'models': [
             {
-                'label': '👳🏻‍♀ UserBots',
+                'label': _('a_userbots'),
                 'model': 'bot.UserBot'
             },
             {
-                'label': '📜 Logs',
+                'label': _('a_logs'),
                 'model': 'bot.Log'
             },
         ]
     },
     {
         'app': 'bot',
-        'label': 'Management',
+        'label': _('management'),
         'models': [
             {
-                'label': '📢 Channels',
+                'label': _('a_channels'),
                 'model': 'bot.Channel'
             },
             {
-                'label': '📝 Limitations',
+                'label': _('a_limitations'),
                 'model': 'bot.Limitation'
             },
             {
-                'label': '⚙️ Settings',
+                'label': _('a_settings'),
                 'model': 'bot.Settings'
             },
         ]

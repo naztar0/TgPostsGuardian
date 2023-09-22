@@ -1,4 +1,5 @@
 {% extends "admin/base.html" %}
+{% load i18n %}
 
 {% block title %}{{ site_title }}{% endblock %}
 
@@ -8,8 +9,56 @@
 
 {% block nav-global %}{% endblock %}
 
+{% block usertools %}
+    <div id="user-tools-wrap">
+        {{ block.super }}
+        <form action="{% url 'set_language' %}" method="post" id="set_language">{% csrf_token %}
+            <input name="next" type="hidden" value="{{ redirect_to }}" />
+            <input name="language" type="hidden" id="language_input" />
+            <button type="button" value="ru" class="btn-link btn-lang">Ru</button>
+            <button type="button" value="en" class="btn-link btn-lang">En</button>
+        </form>
+        <script>
+            const langForm = document.getElementById('set_language');
+            const langButtons = langForm.querySelectorAll('button');
+            langButtons.forEach((button) => {
+                button.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    document.getElementById('language_input').value = e.target.getAttribute('value');
+                    langForm.submit();
+                });
+            });
+        </script>
+    </div>
+{% endblock %}
+
 {% block content_title %}{% endblock %}
 
 {% block extrastyle %}{{ block.super }}
-<style> .skip-to-content-link { display: none; } </style>
+<style>
+    .skip-to-content-link { display: none; }
+    .btn-link {
+        padding: 0;
+        border: none;
+        background: none;
+        color: #f5dd5d;
+        cursor: pointer;
+    }
+    .btn-lang {
+        margin-right: 10px;
+    }
+    #user-tools-wrap {
+        display: flex;
+        flex-direction: row-reverse;
+        align-items: center;
+    }
+    @media (max-width: 1024px) {
+        #user-tools-wrap {
+            flex-direction: column;
+        }
+        #set_language {
+            margin-top: 10px;
+        }
+    }
+</style>
 {% endblock %}

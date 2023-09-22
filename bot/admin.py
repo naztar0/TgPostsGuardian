@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import User as DjangoUser, Group as DjangoGroup
 from preferences.admin import PreferencesAdmin
 
@@ -25,7 +26,7 @@ class UserBotAdmin(admin.ModelAdmin):
             return format_html(f'<a href="tg://resolve?domain={obj.username}">@{obj.username}</a>')
         else:
             return '-'
-    username_custom.short_description = '@username'
+    username_custom.short_description = _('@username')
 
     def has_add_permission(self, *args, **kwargs):
         return False
@@ -51,14 +52,14 @@ class LogAdmin(admin.ModelAdmin):
             return format_html(f'<a href="/bot/user/?q={obj.userbot.user_id}">{obj.userbot.first_name}&nbsp;{obj.userbot.last_name}</a>')
         else:
             return '-'
-    user_custom.short_description = 'UserBot'
+    user_custom.short_description = _('userbot')
 
     def channel_custom(self, obj):
         if obj.channel:
             return format_html(f'<a href="/bot/channel/?q={obj.channel.channel_id}">{obj.channel.title}</a>')
         else:
             return '-'
-    channel_custom.short_description = 'Channel'
+    channel_custom.short_description = _('channel')
 
     def has_add_permission(self, *args, **kwargs):
         return False
@@ -88,7 +89,7 @@ class ChannelAdmin(admin.ModelAdmin):
             return format_html(f'<a href="tg://resolve?domain={obj.username}">@{obj.username}</a>')
         else:
             return '-'
-    username_custom.short_description = '@username'
+    username_custom.short_description = _('@username')
 
     def has_add_permission(self, *args, **kwargs):
         return True
@@ -118,7 +119,7 @@ class LimitationAdmin(admin.ModelAdmin):
             return format_html(f'<a href="/bot/channel/?q={obj.channel.channel_id}">{obj.channel.title}</a>')
         else:
             return '-'
-    channel_custom.short_description = 'Channel'
+    channel_custom.short_description = _('channel')
 
     def has_add_permission(self, *args, **kwargs):
         return True
