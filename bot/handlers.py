@@ -55,12 +55,6 @@ class App(BaseApp):
                 user.delete()
 
         for channel in models.Channel.objects.all():
-            channel_api: types.Chat = self.client.get_chat(channel.v2_id)
-            channel.title = channel_api.title
-            channel.username = channel_api.username
-            channel.has_protected_content = channel_api.has_protected_content
-            channel.save()
-
             cp: ChannelParticipants = self.client.invoke(
                 GetParticipants(channel=self.client.resolve_peer(channel.v2_id), filter=ChannelParticipantsAdmins(), offset=0, limit=100, hash=0)
             )
@@ -71,6 +65,13 @@ class App(BaseApp):
                     self.client.promote_chat_member(channel.v2_id, user.user_id, privileges)
                     logging.info(f'Promoted {user.user_id} to admin in {channel.title}')
                     time.sleep(1)
+
+    def refresh_channel(self, channel: models.Channel):
+        channel_api: types.Chat = self.client.get_chat(channel.v2_id)
+        channel.title = channel_api.title
+        channel.username = channel_api.username
+        channel.has_protected_content = channel_api.has_protected_content
+        channel.save()
 
     def refresh_me(self):
         me: types.User = self.client.get_me()
@@ -117,6 +118,7 @@ class App(BaseApp):
     def check_post_deletions(self):
         now = datetime.now(timezone.utc)
         for channel in models.Channel.objects.all():
+            self.refresh_channel(channel)
             daily_deletions_count = models.Log.objects.filter(channel=channel, type=models.types.Log.DELETION, success=True,
                                                               created__year=now.year, created__month=now.month, created__day=now.day).count()
             logging.info(f'Checking channel {channel.title} with {daily_deletions_count} daily deletions')
