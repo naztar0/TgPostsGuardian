@@ -2,7 +2,7 @@ import os
 import logging
 from time import sleep
 from django.core.management.base import BaseCommand
-from pyrogram.errors import exceptions
+from telethon import errors
 from app.settings import BASE_DIR, USERBOT_PN_LIST, DEBUG, HOST_FUNC_COUNT
 from bot import handlers, login
 # noinspection PyUnresolvedReferences
@@ -31,7 +31,7 @@ class Command(BaseCommand):
                     f.write(str(pid))
                 try:
                     handlers.main(phone_number)
-                except (exceptions.BadRequest, exceptions.Unauthorized) as e:
+                except (errors.BadRequestError, errors.UnauthorizedError) as e:
                     logging.error(f'{phone_number} {e}')
                 return
             if options['func'] is not None:
@@ -39,7 +39,7 @@ class Command(BaseCommand):
                     f.write(str(pid))
                 try:
                     handlers.main(phone_number, options['host'], options['func'])
-                except (exceptions.BadRequest, exceptions.Unauthorized) as e:
+                except (errors.BadRequestError, errors.UnauthorizedError) as e:
                     logging.error(f'{phone_number} {e}')
             else:
                 for i in range(HOST_FUNC_COUNT):

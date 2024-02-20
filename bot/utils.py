@@ -1,29 +1,35 @@
 import json
 import logging
 import random
-import time
 import string
+from asyncio import sleep
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
-from pyrogram import types
-from pyrogram.errors import FloodWait
+from telethon import TelegramClient, types
+from telethon.errors import FloodWaitError
 from preferences import preferences
 
-base_dir = Path(__file__).parent
-temp_dir = base_dir / 'temp'
 
-
-def loop_wrapper(func, sleep_time, *args, **kwargs):
+async def loop_wrapper(func, sleep_time, *args, **kwargs):
     while True:
         try:
-            func(*args, **kwargs)
-            time.sleep(random.randint(sleep_time, sleep_time + 16))
-        except FloodWait as e:
-            logging.warning(f'Flood wait {e.value} seconds')
-            time.sleep(e.value)
-        except Exception as e:
-            logging.error(e)
-            time.sleep(60)
+            await func(*args, **kwargs)
+            await sleep(random.randint(sleep_time, sleep_time + 16))
+        except FloodWaitError as e:
+            logging.warning(f'Flood wait {e.seconds} seconds')
+            await sleep(e.seconds)
+
+
+async def collect_media_group(client: TelegramClient, post: types.Message):
+    grouped_messages = []
+    async for message in client.iter_messages(
+        post.peer_id,
+        reverse=True,
+        limit=20,
+        offset_id=post.id - 10
+    ):
+        if message.grouped_id == post.grouped_id:
+            grouped_messages.append(message)
+    return grouped_messages
 
 
 def get_media_file_id(message: types.Message):
