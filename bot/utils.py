@@ -17,6 +17,9 @@ async def loop_wrapper(func, sleep_time, *args, **kwargs):
         except FloodWaitError as e:
             logging.warning(f'Flood wait {e.seconds} seconds')
             await sleep(e.seconds)
+        except ValueError as e:
+            logging.error(e)
+            await sleep(60)
 
 
 async def collect_media_group(client: TelegramClient, post: types.Message):
