@@ -190,7 +190,6 @@ class App:
                             continue
                         if limitation.views_for_deletion and message.views > limitation.views_for_deletion:
                             logging.info(f'Found views {message.views} more than limitation {limitation.views_for_deletion}')
-                            print('grouped_id', message.grouped_id)
                             if message.grouped_id and channel.delete_albums:
                                 if message.grouped_id not in grouped_messages:
                                     grouped_messages[message.grouped_id] = await utils.collect_media_group(self.client, message)
