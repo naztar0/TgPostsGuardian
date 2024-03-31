@@ -74,3 +74,11 @@ def rand_username(username):
         new_username = base + ''.join(random.choices(string.digits, k=sl))
         if new_username != username:
             return new_username
+
+
+def init_logger(number):
+    formatter = logging.Formatter(f'%(levelname)s:{number}:%(name)s:%(message)s')
+    logger = logging.getLogger()
+    for handler in logger.handlers:
+        handler.setFormatter(formatter)
+    return logger

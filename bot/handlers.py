@@ -247,5 +247,6 @@ class App:
 
 
 def main(number, host=False, func=None):
+    utils.init_logger(number)
     app = App(number, host, func)
     get_event_loop().run_until_complete(app.start())
