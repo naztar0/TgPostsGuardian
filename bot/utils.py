@@ -20,6 +20,9 @@ async def loop_wrapper(func, sleep_time, *args, **kwargs):
         except (ValueError, ConnectionError, BufferError) as e:
             logging.error(e)
             await sleep(60)
+        except Exception as e:
+            logging.critical(e)
+            await sleep(60 * 5)
 
 
 async def collect_media_group(client: TelegramClient, post: types.Message):
