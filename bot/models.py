@@ -12,6 +12,7 @@ class UserBot(models.Model):
     first_name = models.CharField(_('first_name'), max_length=256, blank=True, null=True)
     last_name = models.CharField(_('last_name'), max_length=256, blank=True, null=True)
     phone_number = models.CharField(_('phone_number'), max_length=32, unique=True)
+    ping_time = models.DateTimeField(_('ping_time_utc'), auto_now_add=True)
 
     def __str__(self):
         return str(self.user_id)

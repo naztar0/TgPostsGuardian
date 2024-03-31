@@ -15,7 +15,7 @@ admin.site.enable_nav_sidebar = False
 
 
 class UserBotAdmin(admin.ModelAdmin):
-    list_display = ['created', 'user_id', 'username_custom', 'first_name', 'last_name', 'phone_number']
+    list_display = ['created', 'user_id', 'username_custom', 'first_name', 'last_name', 'phone_number', 'ping_time']
     search_fields = ['user_id', 'username', 'first_name', 'last_name']
     date_hierarchy = 'created'
     list_display_links = None

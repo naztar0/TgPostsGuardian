@@ -29,9 +29,23 @@ class App:
         self.channels = []
         self.func = func
 
+        self.username = None
+        self.first_name = None
+        self.last_name = None
+        self.user_id = None
+
+    async def init_client_info(self):
+        me: types.User = await self.client.get_me()
+        self.username = me.username
+        self.first_name = me.first_name
+        self.last_name = me.last_name
+        self.user_id = me.id
+        logging.info(f'Initialized {self.phone_number} {self.user_id} {self.first_name} {self.last_name}')
+
     async def start(self):
         # noinspection PyUnresolvedReferences
         await self.client.start(lambda: self.phone_number)
+        await self.init_client_info()
         for _ in await self.client.get_dialogs(): pass
         if not self.host or self.host and self.func == 0:
             await self.refresh_me()
@@ -39,12 +53,16 @@ class App:
         if self.host:
             if self.func == 0:
                 await self.refresh()
-                await utils.loop_wrapper(self.check_post_deletions, preferences.Settings.check_post_deletions_interval)
+                await self.loop_wrapper(self.check_post_deletions, preferences.Settings.check_post_deletions_interval)
             elif self.func == 1:
-                await utils.loop_wrapper(self.delete_old_posts, preferences.Settings.delete_old_posts_interval * 60)
+                await self.loop_wrapper(self.delete_old_posts, preferences.Settings.delete_old_posts_interval * 60)
         else:
             await self.join_channels()
-            await utils.loop_wrapper(self.check_post_views, preferences.Settings.check_post_views_interval)
+            await self.loop_wrapper(self.check_post_views, preferences.Settings.check_post_views_interval)
+
+    async def loop_wrapper(self, func, sleep_time, *args, **kwargs):
+        await models.UserBot.objects.filter(user_id=self.user_id).aupdate(ping_time=datetime.now(timezone.utc))
+        await utils.loop_wrapper(func, sleep_time, *args, **kwargs)
 
     async def refresh(self):
         async for user in models.UserBot.objects.all():
@@ -79,11 +97,10 @@ class App:
         await channel.asave()
 
     async def refresh_me(self):
-        me: types.User = await self.client.get_me()
-        await models.UserBot.objects.aupdate_or_create(user_id=me.id, defaults={
-            'username': me.username,
-            'first_name': me.first_name,
-            'last_name': me.last_name,
+        await models.UserBot.objects.aupdate_or_create(user_id=self.user_id, defaults={
+            'username': self.username,
+            'first_name': self.first_name,
+            'last_name': self.last_name,
             'phone_number': self.phone_number,
         })
 
