@@ -11,7 +11,7 @@ class UserBot(models.Model):
     username = models.CharField(_('@username'), max_length=256, blank=True, null=True)
     first_name = models.CharField(_('first_name'), max_length=256, blank=True, null=True)
     last_name = models.CharField(_('last_name'), max_length=256, blank=True, null=True)
-    phone_number = models.CharField(_('phone_number'), max_length=32)
+    phone_number = models.CharField(_('phone_number'), max_length=32, unique=True)
 
     def __str__(self):
         return str(self.user_id)
@@ -86,6 +86,7 @@ class Limitation(models.Model):
     channel = models.ForeignKey(Channel, models.CASCADE, verbose_name=_('channel'))
     views_for_deletion = models.PositiveBigIntegerField(_('views_for_deletion'), default=0)
     views_difference_for_deletion = models.PositiveSmallIntegerField(_('views_difference_for_deletion'), default=0)
+    views_restricted_for_deletion = models.PositiveBigIntegerField(_('views_restricted_for_deletion'), default=0)
     lang_stats_restrictions = models.BooleanField(_('lang_stats_restrictions'), default=False)
     allowed_languages = models.CharField(_('allowed_languages'), max_length=256, blank=True, null=True)
     allowed_languages.help_text = _('allowed_languages_help_text')
