@@ -55,6 +55,8 @@ class Command(BaseCommand):
                 os.system(f'cd {BASE_DIR} && nohup venv/bin/python manage.py start {phone_number} {"--host" if i == 0 else ""} &')
                 if i == 0:
                     sleep(5)
+                else:
+                    sleep(1)
         elif os.name == 'nt':
             for i, phone_number in enumerate(USERBOT_PN_LIST):
                 if DEBUG:
@@ -63,3 +65,5 @@ class Command(BaseCommand):
                     os.system(f'cd {BASE_DIR} && start /B venv/Scripts/python.exe manage.py start {phone_number} {"--host" if i == 0 else ""}')
                 if i == 0:
                     sleep(5)
+                else:
+                    sleep(1)
