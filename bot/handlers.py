@@ -61,8 +61,10 @@ class App:
             await self.loop_wrapper(self.check_post_views, preferences.Settings.check_post_views_interval)
 
     async def loop_wrapper(self, func, sleep_time, *args, **kwargs):
-        await models.UserBot.objects.filter(user_id=self.user_id).aupdate(ping_time=datetime.now(timezone.utc))
-        await utils.loop_wrapper(func, sleep_time, *args, **kwargs)
+        async def wrapper():
+            await models.UserBot.objects.filter(user_id=self.user_id).aupdate(ping_time=datetime.now(timezone.utc))
+            await func(*args, **kwargs)
+        await utils.loop_wrapper(wrapper, sleep_time)
 
     async def refresh(self):
         async for user in models.UserBot.objects.all():
