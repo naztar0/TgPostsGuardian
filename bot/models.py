@@ -29,6 +29,7 @@ class Log(models.Model):
     type = models.CharField(_('type'), max_length=16, choices=TYPES)
     userbot = models.ForeignKey(UserBot, models.CASCADE)
     channel = models.ForeignKey('Channel', models.CASCADE, verbose_name=_('channel'), blank=True, null=True)
+    post_id = models.BigIntegerField(_('post_id'), blank=True, null=True, default=None)
     post_date = models.DateTimeField(_('post_date_utc'), blank=True, null=True, default=None)
     post_views = models.PositiveBigIntegerField(_('post_views'), blank=True, null=True, default=None)
     success = models.BooleanField(_('success'), default=True)
@@ -81,6 +82,26 @@ class PostCheck(models.Model):
         ordering = ('-post_date',)
         verbose_name = _('post')
         verbose_name_plural = _('posts')
+
+
+# class PostPublish(models.Model):
+#     channel = models.ForeignKey(Channel, models.CASCADE, verbose_name=_('channel'))
+
+
+# class Views(models.Model):
+#     TYPES = ((types.Views.TOTAL, _('total')), (types.Views.RESTRICTED, _('restricted')))
+#     created = models.DateTimeField(_('created_utc'), auto_now_add=True)
+#     channel = models.ForeignKey(Channel, models.CASCADE, verbose_name=_('channel'))
+#     type = models.CharField(_('type'), max_length=16, choices=TYPES)
+#     value = models.PositiveBigIntegerField(_('value'))
+#
+#     def __str__(self):
+#         return f'{self.channel} - {self.created}'
+#
+#     class Meta:
+#         ordering = ('-created',)
+#         verbose_name = _('view')
+#         verbose_name_plural = _('views')
 
 
 class Limitation(models.Model):
