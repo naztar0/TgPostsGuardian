@@ -40,7 +40,7 @@ BOT_DEVS = [BOT_ADMINS[0]]
 USERBOT_PN_LIST = env.list('USERBOT_PN_LIST', default=[])
 USERBOT_HOST_ID = env.int('USERBOT_HOST_ID', default=0)
 
-HOST_FUNC_COUNT = 2
+HOST_FUNC_COUNT = 3
 
 
 # Application definition
@@ -174,6 +174,10 @@ ADMIN_REORDER = [
             {
                 'label': _('a_logs'),
                 'model': 'bot.Log'
+            },
+            {
+                'label': _('a_posts'),
+                'model': 'bot.Post'
             },
         ]
     },

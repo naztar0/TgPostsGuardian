@@ -5,8 +5,9 @@ from asyncio import sleep, get_event_loop
 
 from preferences import preferences
 
-from telethon import TelegramClient, types
+from telethon import TelegramClient, types, events
 from telethon.types import ChannelParticipantsAdmins, InputPeerChannel, InputChannel
+from telethon.tl.custom import Message
 from telethon.tl.types.chatlists import ChatlistInvite
 from telethon.tl.types.channels import ChannelParticipants
 from telethon.tl.functions.channels import GetParticipantsRequest, EditAdminRequest, UpdateUsernameRequest
@@ -22,7 +23,7 @@ class App:
         if host:
             name = f'host{func}'
         self.n = USERBOT_PN_LIST.index(phone_number)
-        self.client = TelegramClient(f'{BASE_DIR}/sessions/{name}', API_ID, API_HASH, receive_updates=False)
+        self.client = TelegramClient(f'{BASE_DIR}/sessions/{name}', API_ID, API_HASH, receive_updates=host == 0)
         self.phone_number = phone_number
         self.host = host
         self.userbot: models.UserBot | None = None
@@ -46,23 +47,31 @@ class App:
         # noinspection PyUnresolvedReferences
         await self.client.start(lambda: self.phone_number)
         await self.init_client_info()
-        for _ in await self.client.get_dialogs(): pass
-        if not self.host or self.host and self.func == 0:
+        await self.client.get_dialogs()
+        if not self.host or self.func == 0:
             await self.refresh_me()
+        if self.func == 0:
+            self.client.add_event_handler(
+                self.update_username_message_handler,
+                events.NewMessage(incoming=True, pattern=r'UPDATE_USERNAME (?P<channel_id>-\d+)')
+            )
         self.userbot = await models.UserBot.objects.aget(phone_number=self.phone_number)
         if self.host:
             if self.func == 0:
                 await self.refresh()
-                await self.loop_wrapper(self.check_post_deletions, preferences.Settings.check_post_deletions_interval)
+                await self.client.run_until_disconnected()
             elif self.func == 1:
+                await self.loop_wrapper(self.check_post_deletions, preferences.Settings.check_post_deletions_interval, True)
+            elif self.func == 2:
                 await self.loop_wrapper(self.delete_old_posts, preferences.Settings.delete_old_posts_interval * 60)
         else:
-            await self.join_channels()
-            await self.loop_wrapper(self.check_post_views, preferences.Settings.check_post_views_interval)
+            await self.loop_wrapper(self.check_post_views, preferences.Settings.check_post_views_interval, True)
 
-    async def loop_wrapper(self, func, sleep_time, *args, **kwargs):
+    async def loop_wrapper(self, func, sleep_time, join_channels=False, *args, **kwargs):
         async def wrapper():
             await models.UserBot.objects.filter(user_id=self.user_id).aupdate(ping_time=datetime.now(timezone.utc))
+            if join_channels:
+                await self.join_channels()
             await func(*args, **kwargs)
         await utils.loop_wrapper(wrapper, sleep_time)
 
@@ -117,18 +126,20 @@ class App:
             logging.info(f'Joined {len(channels)} channels: {", ".join([channel.title for channel in channels])}')
 
     async def change_username(self, channel: models.Channel):
-        new_username = utils.rand_username(channel.username)
-        logging.info(f'Updating channel {channel.title} username to {new_username}')
-        try:
-            await self.client(UpdateUsernameRequest(channel.v2_id, new_username))
-            channel.username = new_username
-            channel.last_username_change = datetime.now(timezone.utc)
-            await channel.asave()
-            await models.Log.objects.acreate(type=models.types.Log.USERNAME_CHANGE, userbot=self.userbot, channel=channel)
-        except Exception as e:
-            await models.Log.objects.acreate(type=models.types.Log.USERNAME_CHANGE, userbot=self.userbot, channel=channel, success=False)
-            logging.error(e)
-            await sleep(5)
+        for _ in range(3):
+            new_username = utils.rand_username(channel.username)
+            logging.info(f'Updating channel {channel.title} username to {new_username}')
+            try:
+                await self.client(UpdateUsernameRequest(channel.v2_id, new_username))
+                channel.username = new_username
+                channel.last_username_change = datetime.now(timezone.utc)
+                await channel.asave()
+                await models.Log.objects.acreate(type=models.types.Log.USERNAME_CHANGE, userbot=self.userbot, channel=channel)
+                return new_username
+            except Exception as e:
+                await models.Log.objects.acreate(type=models.types.Log.USERNAME_CHANGE, userbot=self.userbot, channel=channel, success=False)
+                logging.error(e)
+                await sleep(5)
 
     async def get_channels(self):
         channels = models.Channel.objects.all()
@@ -149,17 +160,17 @@ class App:
                 channel=channel, type=models.types.Log.DELETION, success=True,
                 created__year=now.year, created__month=now.month, created__day=now.day,
             ).acount()
-            logging.info(f'Checking channel {channel.title} with {daily_deletions_count} daily deletions')
-            changed_that_day = await models.Log.objects.filter(
+            daily_username_changes_count = await models.Log.objects.filter(
                 channel=channel, type=models.types.Log.USERNAME_CHANGE, success=True,
                 created__year=now.year, created__month=now.month, created__day=now.day,
-            ).aexists()
-            if not changed_that_day and \
-                    channel.deletions_count_for_username_change and \
-                    daily_deletions_count >= channel.deletions_count_for_username_change:
-                if channel.last_username_change and \
-                        channel.last_username_change > now - timedelta(minutes=preferences.Settings.username_change_cooldown):
-                    continue
+            ).acount()
+            logging.info(f'Checking channel {channel.title} with {daily_deletions_count} daily deletions')
+            if (
+                    channel.deletions_count_for_username_change and
+                    daily_deletions_count >= channel.deletions_count_for_username_change * (daily_username_changes_count + 1) and
+                    channel.last_username_change and
+                    channel.last_username_change < now - timedelta(minutes=preferences.Settings.username_change_cooldown)
+            ):
                 await self.change_username(channel)
 
     async def delete_old_posts(self):
@@ -216,21 +227,30 @@ class App:
                                 single_messages.append(message)
                         if limitation.views_difference_for_deletion:
                             logging.info(f'Checking views difference {limitation.views_difference_for_deletion}')
-                            if post := await models.Post.objects.filter(limitation=limitation, post_id=message.id).afirst():
-                                if (message.views - post.views) * 100 / post.views > limitation.views_difference_for_deletion:
+                            if post := await models.PostCheck.objects.filter(channel=channel, post_id=message.id).afirst():
+                                if post.last_check < now - timedelta(minutes=limitation.views_difference_for_deletion_interval) \
+                                        and (message.views - post.views) * 100 / post.views > limitation.views_difference_for_deletion:
                                     logging.info(f'Found views difference {limitation.views_difference_for_deletion}')
                                     if message.grouped_id and channel.delete_albums:
                                         if message.grouped_id not in grouped_messages:
                                             grouped_messages[message.grouped_id] = await utils.collect_media_group(self.client, message)
                                     else:
                                         single_messages.append(message)
-                                    continue
+                                    post.last_check = now
+                                    await post.asave()
                             else:
-                                models.Post.objects.create(post_date=message.date, limitation=limitation, post_id=message.id, views=message.views)
+                                await models.PostCheck.objects.acreate(post_date=message.date, post_id=message.id, views=message.views)
 
             logging.info(f'Found {len(single_messages)} single messages and {len(grouped_messages)} grouped messages')
             for message in single_messages:
-                await models.Log.objects.acreate(type=models.types.Log.DELETION, userbot=self.userbot, channel=channel, post_date=message.date, post_views=message.views)
+                await models.Log.objects.acreate(
+                    type=models.types.Log.DELETION,
+                    userbot=self.userbot,
+                    channel=channel,
+                    post_id=message.id,
+                    post_date=message.date,
+                    post_views=message.views,
+                )
                 if channel.republish_today_posts and message.date.date() == now.date():
                     if channel.has_protected_content:
                         if message.media.photo:
@@ -245,7 +265,14 @@ class App:
                 await self.client.delete_messages(channel.v2_id, message.id)
                 await sleep(1)
             for grouped_message in grouped_messages.values():
-                await models.Log.objects.acreate(type=models.types.Log.DELETION, userbot=self.userbot, channel=channel, post_date=grouped_message[0].date, post_views=grouped_message[0].views)
+                await models.Log.objects.acreate(
+                    type=models.types.Log.DELETION,
+                    userbot=self.userbot,
+                    channel=channel,
+                    post_id=grouped_message[0].id,
+                    post_date=grouped_message[0].date,
+                    post_views=grouped_message[0].views,
+                )
                 if channel.republish_today_posts and grouped_message[0].date.date() == now.date():
                     if channel.has_protected_content:
                         # send only first photo from group
@@ -263,6 +290,12 @@ class App:
                 await sleep(1)
                 await self.client.delete_messages(channel.v2_id, [message.id for message in grouped_message])
                 await sleep(1)
+
+    async def update_username_message_handler(self, event: Message | events.NewMessage.Event):
+        channel_id = abs(int(event.pattern_match['channel_id'][3:]))
+        channel = await models.Channel.objects.aget(channel_id=channel_id)
+        username = await self.change_username(channel)
+        await event.respond(f'{event.pattern_match["channel_id"]} {username or channel.username}')
 
 
 def main(number, host=False, func=None):

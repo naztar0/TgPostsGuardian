@@ -67,14 +67,15 @@ class Channel(models.Model):
         verbose_name_plural = _('channels')
 
 
-class Post(models.Model):
+class PostCheck(models.Model):
+    channel = models.ForeignKey(Channel, models.CASCADE, verbose_name=_('channel'))
     post_date = models.DateTimeField(_('post_date_utc'))
-    limitation = models.ForeignKey('Limitation', models.CASCADE, verbose_name=_('limitation'))
+    last_check = models.DateTimeField(_('last_check_utc'), auto_now_add=True)
     post_id = models.BigIntegerField(_('id'))
     views = models.PositiveBigIntegerField(_('views'))
 
     def __str__(self):
-        return f'{self.limitation.channel} - {self.post_id}'
+        return f'{self.channel} - {self.post_id}'
 
     class Meta:
         ordering = ('-post_date',)
@@ -87,6 +88,7 @@ class Limitation(models.Model):
     channel = models.ForeignKey(Channel, models.CASCADE, verbose_name=_('channel'))
     views_for_deletion = models.PositiveBigIntegerField(_('views_for_deletion'), default=0)
     views_difference_for_deletion = models.PositiveSmallIntegerField(_('views_difference_for_deletion'), default=0)
+    views_difference_for_deletion_interval = models.PositiveSmallIntegerField(_('views_difference_for_deletion_interval_minutes'), default=60)
     views_restricted_for_deletion = models.PositiveBigIntegerField(_('views_restricted_for_deletion'), default=0)
     lang_stats_restrictions = models.BooleanField(_('lang_stats_restrictions'), default=False)
     allowed_languages = models.CharField(_('allowed_languages'), max_length=256, blank=True, null=True)

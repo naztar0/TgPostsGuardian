@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-04-01 01:30+0200\n"
+"POT-Creation-Date: 2024-06-12 17:00+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: .\admin.py:29 .\admin.py:92 .\models.py:11 .\models.py:48
+#: .\admin.py:29 .\admin.py:117 .\models.py:11 .\models.py:49
 msgid "@username"
 msgstr "@username"
 
@@ -26,7 +26,8 @@ msgstr "@username"
 msgid "userbot"
 msgstr "Userbot"
 
-#: .\admin.py:62 .\admin.py:122 .\models.py:31 .\models.py:66 .\models.py:87
+#: .\admin.py:62 .\admin.py:87 .\admin.py:149 .\models.py:31 .\models.py:67
+#: .\models.py:72 .\models.py:88 .\models.py:95 .\models.py:110
 msgid "channel"
 msgstr "Channel"
 
@@ -42,19 +43,23 @@ msgstr "👳🏻‍♀ UserBots"
 msgid "a_logs"
 msgstr "📜 Logs"
 
-#: .\app\settings.py:182
+#: .\app\settings.py:179
+msgid "a_posts"
+msgstr "📝 Posts"
+
+#: .\app\settings.py:186
 msgid "management"
 msgstr "Management"
 
-#: .\app\settings.py:185
+#: .\app\settings.py:189
 msgid "a_channels"
 msgstr "📢 Channels"
 
-#: .\app\settings.py:189
+#: .\app\settings.py:193
 msgid "a_limitations"
 msgstr "📝 Limitations"
 
-#: .\app\settings.py:193
+#: .\app\settings.py:197
 msgid "a_settings"
 msgstr "⚙️ Settings"
 
@@ -62,11 +67,11 @@ msgstr "⚙️ Settings"
 msgid "bot"
 msgstr "Bot"
 
-#: .\models.py:9 .\models.py:28 .\models.py:86
+#: .\models.py:9 .\models.py:28 .\models.py:94 .\models.py:109
 msgid "created_utc"
 msgstr "🕐 Created, UTC"
 
-#: .\models.py:10 .\models.py:46 .\models.py:73
+#: .\models.py:10 .\models.py:47 .\models.py:75
 msgid "id"
 msgstr "ID"
 
@@ -98,179 +103,207 @@ msgstr "🗑️ Deletion"
 msgid "username_change"
 msgstr "👤 Username change"
 
-#: .\models.py:29
+#: .\models.py:29 .\models.py:96
 msgid "type"
 msgstr "Type"
 
-#: .\models.py:32 .\models.py:71
+#: .\models.py:32
+msgid "post_id"
+msgstr "Post ID"
+
+#: .\models.py:33 .\models.py:73
 msgid "post_date_utc"
 msgstr "🕐 Post date, UTC"
 
-#: .\models.py:33
+#: .\models.py:34
 msgid "post_views"
 msgstr "👀 Post views"
 
-#: .\models.py:34
+#: .\models.py:35
 msgid "success"
 msgstr "Success"
 
-#: .\models.py:41
+#: .\models.py:42
 msgid "log"
 msgstr "Log"
 
-#: .\models.py:42
+#: .\models.py:43
 msgid "logs"
 msgstr "Logs"
 
-#: .\models.py:47
+#: .\models.py:48
 msgid "title"
 msgstr "Title"
 
-#: .\models.py:49
+#: .\models.py:50
 msgid "has_protected_content"
 msgstr "Has protected content"
 
-#: .\models.py:50
+#: .\models.py:51
 msgid "last_username_change_utc"
 msgstr "🕐 Last username change, UTC"
 
-#: .\models.py:51
+#: .\models.py:52
 msgid "history_days_limit"
 msgstr "History days limit"
 
-#: .\models.py:52
+#: .\models.py:53
 msgid "delete_albums"
 msgstr "Delete albums"
 
-#: .\models.py:53
+#: .\models.py:54
 msgid "republish_today_deleted_posts"
 msgstr "Republish today deleted posts"
 
-#: .\models.py:54
+#: .\models.py:55
 msgid "deletions_count_for_username_change"
 msgstr "Deletions count for username change"
 
-#: .\models.py:55
+#: .\models.py:56
 msgid "deletions_count_for_username_change_help_text"
 msgstr ""
 "If the number of deletions is less than this value, the username will not be "
 "changed<br>If 0, the username will not be change"
 
-#: .\models.py:56
+#: .\models.py:57
 msgid "delete_all_posts_after_days"
 msgstr "Delete all posts after days"
 
-#: .\models.py:67
+#: .\models.py:68
 msgid "channels"
 msgstr "Channels"
 
-#: .\models.py:72 .\models.py:136
-msgid "limitation"
-msgstr "Limitation"
-
 #: .\models.py:74
+msgid "last_check_utc"
+msgstr "🕐 Last check, UTC"
+
+#: .\models.py:76 .\models.py:105
 msgid "views"
 msgstr "Views"
 
-#: .\models.py:81
+#: .\models.py:83
 msgid "post"
 msgstr "Post"
 
-#: .\models.py:82
+#: .\models.py:84
 msgid "posts"
 msgstr "Posts"
 
-#: .\models.py:88
+#: .\models.py:93
+msgid "total"
+msgstr "Total"
+
+#: .\models.py:93
+msgid "restricted"
+msgstr "Restricted"
+
+#: .\models.py:97
+msgid "value"
+msgstr "Value"
+
+#: .\models.py:104
+msgid "view"
+msgstr "View"
+
+#: .\models.py:111
 msgid "views_for_deletion"
 msgstr "Views for deletion"
 
-#: .\models.py:89
+#: .\models.py:112
 msgid "views_difference_for_deletion"
 msgstr "Views difference for deletion, %"
 
-#: .\models.py:90
+#: .\models.py:113
+msgid "views_difference_for_deletion_interval_minutes"
+msgstr "View difference check interval for deletion, minutes"
+
+#: .\models.py:114
 msgid "views_restricted_for_deletion"
 msgstr "Restricted views for deletion"
 
-#: .\models.py:91
+#: .\models.py:115
 msgid "lang_stats_restrictions"
 msgstr "Language stats restrictions"
 
-#: .\models.py:92
+#: .\models.py:116
 msgid "allowed_languages"
 msgstr "Allowed languages"
 
-#: .\models.py:93
+#: .\models.py:117
 msgid "allowed_languages_help_text"
 msgstr ""
 "List of allowed languages separated by spaces<br>If other languages views "
 "count is more than allowed views count, the post will be deleted"
 
-#: .\models.py:94
+#: .\models.py:118
 msgid "start_date_utc"
 msgstr "📆 Start date, UTC"
 
-#: .\models.py:95
+#: .\models.py:119
 msgid "end_date_utc"
 msgstr "📆 End date, UTC"
 
-#: .\models.py:96
+#: .\models.py:120
 msgid "start_after_days"
 msgstr "Start after days"
 
-#: .\models.py:97
+#: .\models.py:121
 msgid "end_after_days"
 msgstr "End after days"
 
-#: .\models.py:137
+#: .\models.py:160
+msgid "limitation"
+msgstr "Limitation"
+
+#: .\models.py:161
 msgid "limitations"
 msgstr "Limitations"
 
-#: .\models.py:141
+#: .\models.py:165
 msgid "admin_list"
 msgstr "Admin list"
 
-#: .\models.py:142
+#: .\models.py:166
 msgid "admins_help_text"
 msgstr "List of admin IDs separated by spaces or line breaks"
 
-#: .\models.py:143
+#: .\models.py:167
 msgid "chatlist_invite"
 msgstr "Chatlist invite"
 
-#: .\models.py:144
+#: .\models.py:168
 msgid "username_suffix_length"
 msgstr "Username suffix length"
 
-#: .\models.py:145
+#: .\models.py:169
 msgid "check_post_views_interval_seconds"
 msgstr "Check post views interval, seconds"
 
-#: .\models.py:146
+#: .\models.py:170
 msgid "check_post_deletions_interval_seconds"
 msgstr "Check post deletions interval, seconds"
 
-#: .\models.py:147
+#: .\models.py:171
 msgid "delete_old_posts_interval_minutes"
 msgstr "Delete old posts interval, minutes"
 
-#: .\models.py:148
+#: .\models.py:172
 msgid "username_change_cooldown_minutes"
 msgstr "Username change cooldown, minutes"
 
-#: .\models.py:149
+#: .\models.py:173
 msgid "individual_allocations"
 msgstr "Individual allocations"
 
-#: .\models.py:152
+#: .\models.py:176
 msgid "settings"
 msgstr "Settings"
 
-#: .\models.py:155
+#: .\models.py:179
 msgid "list"
 msgstr "List"
 
-#: .\models.py:156
+#: .\models.py:180
 msgid "lists"
 msgstr "Lists"
 
