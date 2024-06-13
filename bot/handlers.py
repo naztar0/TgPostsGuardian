@@ -3,6 +3,7 @@ from io import BytesIO
 from datetime import datetime, timedelta, timezone
 from asyncio import sleep, get_event_loop
 
+from channels.db import database_sync_to_async
 from preferences import preferences
 
 from telethon import TelegramClient, types, events
@@ -293,7 +294,7 @@ class App:
 
     async def update_username_message_handler(self, event: Message | events.NewMessage.Event):
         channel_id = abs(int(event.pattern_match['channel_id'][3:]))
-        channel = await models.Channel.objects.aget(channel_id=channel_id)
+        channel = await database_sync_to_async(models.Channel.objects.get)(channel_id=channel_id)
         username = await self.change_username(channel)
         await event.respond(f'{event.pattern_match["channel_id"]} {username or channel.username}')
 
