@@ -1,4 +1,5 @@
 import logging
+import json
 from io import BytesIO
 from datetime import datetime, timedelta, timezone
 from asyncio import sleep, get_event_loop
@@ -16,6 +17,7 @@ from telethon.tl.functions.chatlists import JoinChatlistInviteRequest, CheckChat
 
 from app.settings import BASE_DIR, API_ID, API_HASH, USERBOT_PN_LIST
 from bot import models, utils
+from bot.utils_lib.stats import get_stats_with_graphs
 
 
 class App:
@@ -54,7 +56,15 @@ class App:
         if self.func == 0:
             self.client.add_event_handler(
                 self.update_username_message_handler,
-                events.NewMessage(incoming=True, pattern=r'UPDATE_USERNAME (?P<channel_id>-\d+)')
+                events.NewMessage(incoming=True, pattern=r'^UPDATE_USERNAME (?P<data>.+)$')
+            )
+            self.client.add_event_handler(
+                self.make_post_message_handler,
+                events.NewMessage(incoming=True, pattern=r'^MAKE_POST (?P<data>.+)$')
+            )
+            self.client.add_event_handler(
+                self.publish_post_message_handler,
+                events.NewMessage(incoming=True, pattern=r'^PUBLISH_POST (?P<data>.+)$')
             )
         self.userbot = await models.UserBot.objects.aget(phone_number=self.phone_number)
         if self.host:
@@ -64,6 +74,8 @@ class App:
             elif self.func == 1:
                 await self.loop_wrapper(self.check_post_deletions, preferences.Settings.check_post_deletions_interval, True)
             elif self.func == 2:
+                await self.loop_wrapper(self.check_lang_stats, preferences.Settings.check_stats_interval)
+            elif self.func == 3:
                 await self.loop_wrapper(self.delete_old_posts, preferences.Settings.delete_old_posts_interval * 60)
         else:
             await self.loop_wrapper(self.check_post_views, preferences.Settings.check_post_views_interval, True)
@@ -161,16 +173,10 @@ class App:
                 channel=channel, type=models.types.Log.DELETION, success=True,
                 created__year=now.year, created__month=now.month, created__day=now.day,
             ).acount()
-            daily_username_changes_count = await models.Log.objects.filter(
-                channel=channel, type=models.types.Log.USERNAME_CHANGE, success=True,
-                created__year=now.year, created__month=now.month, created__day=now.day,
-            ).acount()
             logging.info(f'Checking channel {channel.title} with {daily_deletions_count} daily deletions')
             if (
                     channel.deletions_count_for_username_change and
-                    daily_deletions_count >= channel.deletions_count_for_username_change * (daily_username_changes_count + 1) and
-                    channel.last_username_change and
-                    channel.last_username_change < now - timedelta(minutes=preferences.Settings.username_change_cooldown)
+                    await utils.can_change_username(channel, daily_deletions_count, channel.deletions_count_for_username_change)
             ):
                 await self.change_username(channel)
 
@@ -292,11 +298,150 @@ class App:
                 await self.client.delete_messages(channel.v2_id, [message.id for message in grouped_message])
                 await sleep(1)
 
+    async def handle_view_limitation(self, channel, current_views, max_views, hourly_distribution):
+        if hourly_distribution:
+            max_views //= 24 - datetime.now(timezone.utc).hour
+        logging.info(f'Views: {current_views}, max views: {max_views}')
+        if current_views > max_views and await utils.can_change_username(channel, current_views, max_views):
+            await self.change_username(channel)
+            await sleep(30)
+            return True
+        return False
+
+    async def handle_view_diff_limitation(self, channel, language, current_views, max_diff, interval):
+        last_views: models.StatsViews = await models.StatsViews.objects \
+            .filter(channel=channel, language=language).order_by('-created').afirst()
+        logging.info(f'Language: {language}, current views: {current_views}')
+        if not last_views:
+            last_views = await models.StatsViews.objects.acreate(channel=channel, language=language, value=current_views)
+        if last_views.created < datetime.now(timezone.utc) - timedelta(minutes=interval):
+            percent_diff = (current_views - last_views.value) * 100 / last_views.value
+            logging.info(f'Percent: {percent_diff}, max percent: {max_diff}')
+            if percent_diff > max_diff and await utils.can_change_username(channel, percent_diff, max_diff):
+                await self.change_username(channel)
+                await sleep(30)
+                return True
+        return False
+
+    async def check_lang_stats(self):
+        async for channel in await self.get_channels():
+            logging.info(f'Checking channel {channel.channel_id}')
+            stats, graphs = await get_stats_with_graphs(self.client, channel.v2_id, ['languages_graph'])
+            async for limitation in models.Limitation.objects.filter(channel=channel).order_by('-created'):
+                if not limitation.lang_stats_restrictions:
+                    continue
+                lang_stats = utils.LanguageStats()
+                lang_stats.get_languages_graph_views(graphs, days=7)
+                lang_stats.parse_lang_stats_restrictions(limitation.lang_stats_restrictions)
+                if limitation.views_for_deletion:
+                    if await self.handle_view_limitation(
+                            channel,
+                            lang_stats.get_total(),
+                            limitation.views_for_deletion,
+                            limitation.hourly_distribution
+                    ):
+                        continue
+                if limitation.views_difference_for_deletion:
+                    if await self.handle_view_diff_limitation(
+                            channel,
+                            None,
+                            lang_stats.get_total(),
+                            limitation.views_difference_for_deletion,
+                            limitation.views_difference_for_deletion_interval
+                    ):
+                        continue
+                if '*' in lang_stats.restrictions:
+                    max_views = lang_stats.restrictions['*']
+                    if max_views > 0:
+                        if await self.handle_view_limitation(
+                                channel,
+                                lang_stats.get_others(),
+                                max_views,
+                                limitation.hourly_distribution
+                        ):
+                            continue
+                    else:  # percentage
+                        if await self.handle_view_diff_limitation(
+                                channel,
+                                '*',
+                                lang_stats.get_others(),
+                                -max_views,
+                                limitation.views_difference_for_deletion_interval
+                        ):
+                            continue
+                for lang, views in lang_stats.get_data().items():
+                    if lang not in lang_stats.restrictions:
+                        continue
+                    max_views = lang_stats.restrictions[lang]
+                    if max_views > 0:
+                        if await self.handle_view_limitation(
+                                channel,
+                                views,
+                                max_views,
+                                limitation.hourly_distribution
+                        ):
+                            break
+                    else:  # percentage
+                        if await self.handle_view_diff_limitation(
+                                channel,
+                                lang,
+                                views,
+                                -max_views,
+                                limitation.views_difference_for_deletion_interval
+                        ):
+                            break
+            await sleep(3)
+
     async def update_username_message_handler(self, event: Message | events.NewMessage.Event):
-        channel_id = abs(int(event.pattern_match['channel_id'][3:]))
-        channel = await database_sync_to_async(models.Channel.objects.get)(channel_id=channel_id)
+        data = json.loads(event.pattern_match['data'])
+
+        channel_id_v2 = data['channel_id']
+        channel_id_v1 = abs(int(str(channel_id_v2)[3:]))
+
+        channel = await database_sync_to_async(models.Channel.objects.get)(channel_id=channel_id_v1)
         username = await self.change_username(channel)
-        await event.respond(f'{event.pattern_match["channel_id"]} {username or channel.username}')
+        await event.respond(json.dumps({'channel_id': channel_id_v2, 'username': username or channel.username}))
+
+    async def make_post_message_handler(self, event: Message | events.NewMessage.Event):
+        data: dict = json.loads(event.pattern_match['data'])  # {'album_ids': [1, 2, 3], 'text_id': 1}
+
+        album_messages = await self.client.get_messages(preferences.Settings.archive_channel, ids=data['album_ids']) if data.get('album_ids') else None
+        text_message = await self.client.get_messages(preferences.Settings.archive_channel, ids=data['text_id'])
+        result = await self.client.send_message(preferences.Settings.archive_channel, text_message.message, file=album_messages)
+
+        if isinstance(result, list):
+            result_ids = [x.id for x in result]
+        else:
+            result_ids = [result.id]
+        if text_message.entities:
+            # noinspection PyTypeChecker
+            await self.client.edit_message(
+                preferences.Settings.archive_channel,
+                result_ids[0],
+                text_message.message,
+                formatting_entities=text_message.entities
+            )
+        await event.respond(json.dumps(result_ids))
+
+    async def publish_post_message_handler(self, event: Message | events.NewMessage.Event):
+        data: dict = json.loads(event.pattern_match['data'])  # {'message_ids': [1, 2, 3], 'channel_id': 1}
+
+        messages = await self.client.get_messages(preferences.Settings.archive_channel, ids=data['message_ids'])
+        result = await self.client.send_message(data['channel_id'], messages[0].message, file=messages if messages[0].media else None)
+
+        if isinstance(result, list):
+            result_ids = [x.id for x in result]
+        else:
+            result_ids = [result.id]
+        if messages[0].entities:
+            # noinspection PyTypeChecker
+            await self.client.edit_message(
+                data['channel_id'],
+                result_ids[0],
+                messages[0].message,
+                formatting_entities=messages[0].entities
+            )
+        await event.respond(json.dumps(result_ids))
 
 
 def main(number, host=False, func=None):

@@ -128,7 +128,7 @@ class ChannelAdmin(admin.ModelAdmin):
 
 class LimitationAdmin(admin.ModelAdmin):
     list_display = ['created', 'channel_custom', 'views_for_deletion', 'views_difference_for_deletion',
-                    'views_difference_for_deletion_interval', 'lang_stats_restrictions', 'allowed_languages',
+                    'views_difference_for_deletion_interval', 'lang_stats_restrictions_custom', 'hourly_distribution',
                     'start_date', 'end_date', 'start_after_days', 'end_after_days']
     list_per_page = 25
 
@@ -138,7 +138,7 @@ class LimitationAdmin(admin.ModelAdmin):
     fieldsets = [
         ('Parameters', {'fields': ['channel', 'views_for_deletion', 'views_difference_for_deletion',
                                    'views_difference_for_deletion_interval', 'lang_stats_restrictions',
-                                   'allowed_languages', 'start_date', 'end_date', 'start_after_days', 'end_after_days']}),
+                                   'hourly_distribution', 'start_date', 'end_date', 'start_after_days', 'end_after_days']}),
     ]
 
     def channel_custom(self, obj):
@@ -147,6 +147,10 @@ class LimitationAdmin(admin.ModelAdmin):
         else:
             return '-'
     channel_custom.short_description = _('channel')
+
+    def lang_stats_restrictions_custom(self, obj):
+        return obj.lang_stats_restrictions or '-'
+    lang_stats_restrictions_custom.short_description = _('lang_stats_restrictions')
 
     def has_add_permission(self, *args, **kwargs):
         return True
@@ -160,8 +164,9 @@ class LimitationAdmin(admin.ModelAdmin):
 
 class SettingsAdmin(PreferencesAdmin):
     fieldsets = [
-        ('Parameters', {'fields': ['admins', 'chatlist_invite', 'username_suffix_length', 'check_post_views_interval',
-                                   'check_post_deletions_interval', 'delete_old_posts_interval',
+        ('Parameters', {'fields': ['admins', 'chatlist_invite', 'archive_channel', 'username_suffix_length',
+                                   'check_post_views_interval', 'check_post_deletions_interval',
+                                   'check_stats_interval', 'delete_old_posts_interval',
                                    'username_change_cooldown', 'individual_allocations']}),
     ]
 

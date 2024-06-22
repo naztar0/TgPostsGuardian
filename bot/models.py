@@ -84,24 +84,19 @@ class PostCheck(models.Model):
         verbose_name_plural = _('posts')
 
 
-# class PostPublish(models.Model):
-#     channel = models.ForeignKey(Channel, models.CASCADE, verbose_name=_('channel'))
+class StatsViews(models.Model):
+    created = models.DateTimeField(_('created_utc'), auto_now_add=True)
+    channel = models.ForeignKey(Channel, models.CASCADE, verbose_name=_('channel'))
+    language = models.CharField(_('language'), max_length=32, blank=True, null=True)  # NULL means all languages
+    value = models.PositiveBigIntegerField(_('value'))
 
+    def __str__(self):
+        return f'{self.channel} - {self.created}'
 
-# class Views(models.Model):
-#     TYPES = ((types.Views.TOTAL, _('total')), (types.Views.RESTRICTED, _('restricted')))
-#     created = models.DateTimeField(_('created_utc'), auto_now_add=True)
-#     channel = models.ForeignKey(Channel, models.CASCADE, verbose_name=_('channel'))
-#     type = models.CharField(_('type'), max_length=16, choices=TYPES)
-#     value = models.PositiveBigIntegerField(_('value'))
-#
-#     def __str__(self):
-#         return f'{self.channel} - {self.created}'
-#
-#     class Meta:
-#         ordering = ('-created',)
-#         verbose_name = _('view')
-#         verbose_name_plural = _('views')
+    class Meta:
+        ordering = ('-created',)
+        verbose_name = _('view')
+        verbose_name_plural = _('views')
 
 
 class Limitation(models.Model):
@@ -110,10 +105,10 @@ class Limitation(models.Model):
     views_for_deletion = models.PositiveBigIntegerField(_('views_for_deletion'), default=0)
     views_difference_for_deletion = models.PositiveSmallIntegerField(_('views_difference_for_deletion'), default=0)
     views_difference_for_deletion_interval = models.PositiveSmallIntegerField(_('views_difference_for_deletion_interval_minutes'), default=60)
-    views_restricted_for_deletion = models.PositiveBigIntegerField(_('views_restricted_for_deletion'), default=0)
-    lang_stats_restrictions = models.BooleanField(_('lang_stats_restrictions'), default=False)
-    allowed_languages = models.CharField(_('allowed_languages'), max_length=256, blank=True, null=True)
-    allowed_languages.help_text = _('allowed_languages_help_text')
+    lang_stats_restrictions = models.TextField(_('lang_stats_restrictions'), max_length=256, blank=True, null=True)
+    lang_stats_restrictions.help_text = _('lang_stats_restrictions_help_text')
+    hourly_distribution = models.BooleanField(_('hourly_distribution'), default=False)
+    hourly_distribution.help_text = _('hourly_distribution_help_text')
     start_date = models.DateField(_('start_date_utc'), blank=True, null=True)
     end_date = models.DateField(_('end_date_utc'), blank=True, null=True)
     start_after_days = models.PositiveIntegerField(_('start_after_days'), default=0)
@@ -164,12 +159,15 @@ class Settings(Preferences):
     admins = models.TextField(_('admin_list'), max_length=256, blank=True, null=True)
     admins.help_text = _('admins_help_text')
     chatlist_invite = models.CharField(_('chatlist_invite'), max_length=16, blank=True, null=True)
+    archive_channel = models.BigIntegerField(_('archive_channel_id'), blank=True, null=True)
     username_suffix_length = models.PositiveSmallIntegerField(_('username_suffix_length'), default=2)
     check_post_views_interval = models.PositiveSmallIntegerField(_('check_post_views_interval_seconds'), default=60)
     check_post_deletions_interval = models.PositiveSmallIntegerField(_('check_post_deletions_interval_seconds'), default=60)
+    check_stats_interval = models.PositiveSmallIntegerField(_('check_stats_interval_seconds'), default=120)
     delete_old_posts_interval = models.PositiveSmallIntegerField(_('delete_old_posts_interval_minutes'), default=60)
     username_change_cooldown = models.PositiveSmallIntegerField(_('username_change_cooldown_minutes'), default=120)
     individual_allocations = models.BooleanField(_('individual_allocations'), default=False)
+    individual_allocations.help_text = _('individual_allocations_help_text')
 
     def __str__(self):
         return str(_('settings'))
