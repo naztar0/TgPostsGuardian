@@ -97,7 +97,7 @@ class App:
 
     async def refresh(self):
         async for user in models.UserBot.objects.all():
-            if user.phone_number not in USERBOT_PN_LIST:
+            if user.phone_number not in USERBOT_HOST_LIST and user.phone_number not in USERBOT_PN_LIST:
                 await user.adelete()
 
         async for channel in models.Channel.objects.all():
