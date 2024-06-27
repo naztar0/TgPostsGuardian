@@ -86,7 +86,10 @@ class LanguageStats:
 
     def parse_lang_stats_restrictions(self, restrictions: str):
         for restriction in restrictions.split('\n'):
-            lang, value = restriction.split()
+            split = restriction.split()
+            if len(split) != 2:
+                continue
+            lang, value = split
             if value[-1] == '%':
                 value = '-' + value[:-1]
             self.restrictions[lang.capitalize()] = int(value)
