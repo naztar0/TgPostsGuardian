@@ -2,30 +2,32 @@ import logging
 import json
 from io import BytesIO
 from datetime import datetime, timedelta, timezone
-from asyncio import sleep, get_event_loop
+from asyncio import sleep, get_event_loop, gather
 
 from channels.db import database_sync_to_async
 from preferences import preferences
 
 from telethon import TelegramClient, types, events
-from telethon.types import ChannelParticipantsAdmins, InputPeerChannel, InputChannel
+from telethon.types import ChannelParticipantsAdmins, InputPeerChannel, InputChannel, MessageMediaPhoto
 from telethon.tl.custom import Message
 from telethon.tl.types.chatlists import ChatlistInvite
 from telethon.tl.types.channels import ChannelParticipants
 from telethon.tl.functions.channels import GetParticipantsRequest, EditAdminRequest, UpdateUsernameRequest
 from telethon.tl.functions.chatlists import JoinChatlistInviteRequest, CheckChatlistInviteRequest
 
-from app.settings import BASE_DIR, API_ID, API_HASH, USERBOT_PN_LIST
+from app.settings import BASE_DIR, API_ID, API_HASH, USERBOT_PN_LIST, USERBOT_HOST_LIST
 from bot import models, utils
 from bot.utils_lib.stats import get_stats_with_graphs
 
 
 class App:
-    def __init__(self, phone_number: str, host: bool, func: int):
-        name = phone_number
+    def __init__(self, phone_number: str, host: int, func: int):
         if host:
-            name = f'host{func}'
-        self.n = USERBOT_PN_LIST.index(phone_number)
+            name = f'{phone_number}-host-{host}-func-{func}'
+            self.n = USERBOT_HOST_LIST.index(phone_number)
+        else:
+            name = phone_number
+            self.n = USERBOT_PN_LIST.index(phone_number)
         self.client = TelegramClient(f'{BASE_DIR}/sessions/{name}', API_ID, API_HASH, receive_updates=host == 0)
         self.phone_number = phone_number
         self.host = host
@@ -51,9 +53,9 @@ class App:
         await self.client.start(lambda: self.phone_number)
         await self.init_client_info()
         await self.client.get_dialogs()
-        if not self.host or self.func == 0:
+        if not self.host or self.func == 1:
             await self.refresh_me()
-        if self.func == 0:
+        if self.func == 1:
             self.client.add_event_handler(
                 self.update_username_message_handler,
                 events.NewMessage(incoming=True, pattern=r'^UPDATE_USERNAME (?P<data>.+)$')
@@ -68,23 +70,28 @@ class App:
             )
         self.userbot = await models.UserBot.objects.aget(phone_number=self.phone_number)
         if self.host:
-            if self.func == 0:
+            if self.func == 1:
                 await self.refresh()
                 await self.client.run_until_disconnected()
-            elif self.func == 1:
-                await self.loop_wrapper(self.check_post_deletions, preferences.Settings.check_post_deletions_interval, True)
             elif self.func == 2:
-                await self.loop_wrapper(self.check_lang_stats, preferences.Settings.check_stats_interval)
-            elif self.func == 3:
-                await self.loop_wrapper(self.delete_old_posts, preferences.Settings.delete_old_posts_interval * 60)
+                await self.start_jobs(
+                    ('join_channels', 60 * 5),
+                    ('check_post_deletions', preferences.Settings.check_post_deletions_interval),
+                    ('check_lang_stats', preferences.Settings.check_stats_interval),
+                    ('delete_old_posts', preferences.Settings.delete_old_posts_interval * 60)
+                )
         else:
-            await self.loop_wrapper(self.check_post_views, preferences.Settings.check_post_views_interval, True)
+            await self.start_jobs(
+                ('join_channels', 60 * 5),
+                ('check_post_views', preferences.Settings.check_post_views_interval)
+            )
 
-    async def loop_wrapper(self, func, sleep_time, join_channels=False, *args, **kwargs):
+    async def start_jobs(self, *jobs: tuple[str, int]):
+        await gather(*[self.loop_wrapper(getattr(self, job), interval) for job, interval in jobs])
+
+    async def loop_wrapper(self, func, sleep_time, *args, **kwargs):
         async def wrapper():
             await models.UserBot.objects.filter(user_id=self.user_id).aupdate(ping_time=datetime.now(timezone.utc))
-            if join_channels:
-                await self.join_channels()
             await func(*args, **kwargs)
         await utils.loop_wrapper(wrapper, sleep_time)
 
@@ -260,7 +267,7 @@ class App:
                 )
                 if channel.republish_today_posts and message.date.date() == now.date():
                     if channel.has_protected_content:
-                        if message.media.photo:
+                        if isinstance(message.media, MessageMediaPhoto):
                             # noinspection PyTypeChecker
                             photo: BytesIO = await self.client.download_media(message, bytes)
                             await self.client.send_message(channel.v2_id, message.message, file=photo)
@@ -400,10 +407,12 @@ class App:
 
         channel = await database_sync_to_async(models.Channel.objects.get)(channel_id=channel_id_v1)
         username = await self.change_username(channel)
-        await event.respond(json.dumps({'channel_id': channel_id_v2, 'username': username or channel.username}))
+
+        result = json.dumps({'channel_id': channel_id_v2, 'username': username or channel.username})
+        await event.respond(f'/update_username {result}')
 
     async def make_post_message_handler(self, event: Message | events.NewMessage.Event):
-        data: dict = json.loads(event.pattern_match['data'])  # {'album_ids': [1, 2, 3], 'text_id': 1}
+        data: dict = json.loads(event.pattern_match['data'])  # {'album_ids': [1, 2, 3], 'text_id': 1, 'bot_user_id': 1}
 
         album_messages = await self.client.get_messages(preferences.Settings.archive_channel, ids=data['album_ids']) if data.get('album_ids') else None
         text_message = await self.client.get_messages(preferences.Settings.archive_channel, ids=data['text_id'])
@@ -421,10 +430,12 @@ class App:
                 text_message.message,
                 formatting_entities=text_message.entities
             )
-        await event.respond(json.dumps(result_ids))
+
+        result = json.dumps({'message_ids': result_ids, 'bot_user_id': data['bot_user_id']})
+        await event.respond(f'/make_post {result}')
 
     async def publish_post_message_handler(self, event: Message | events.NewMessage.Event):
-        data: dict = json.loads(event.pattern_match['data'])  # {'message_ids': [1, 2, 3], 'channel_id': 1}
+        data: dict = json.loads(event.pattern_match['data'])  # {'message_ids': [1, 2, 3], 'channel_id': 1, 'ad_id': 1}
 
         messages = await self.client.get_messages(preferences.Settings.archive_channel, ids=data['message_ids'])
         result = await self.client.send_message(data['channel_id'], messages[0].message, file=messages if messages[0].media else None)
@@ -441,10 +452,12 @@ class App:
                 messages[0].message,
                 formatting_entities=messages[0].entities
             )
-        await event.respond(json.dumps(result_ids))
+
+        result = json.dumps({'message_ids': result_ids, 'ad_id': data['ad_id']})
+        await event.respond(f'/publish_post {result}')
 
 
-def main(number, host=False, func=None):
+def main(number, host=0, func=0):
     utils.init_logger(number)
     app = App(number, host, func)
     get_event_loop().run_until_complete(app.start())

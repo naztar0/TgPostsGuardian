@@ -38,9 +38,9 @@ CSRF_TRUSTED_ORIGINS = [f'https://{WEBHOOK_DOMAIN}']
 BOT_DEVS = [BOT_ADMINS[0]]
 
 USERBOT_PN_LIST = env.list('USERBOT_PN_LIST', default=[])
-USERBOT_HOST_ID = env.int('USERBOT_HOST_ID', default=0)
+USERBOT_HOST_LIST = env.list('USERBOT_HOST_LIST', default=[])
 
-HOST_FUNC_COUNT = 4
+HOST_FUNC_COUNT = 2
 
 
 # Application definition
