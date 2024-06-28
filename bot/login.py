@@ -1,16 +1,16 @@
 # noinspection PyUnresolvedReferences
 import sqlite3
 
-from pyrogram import Client
+from telethon import TelegramClient
 
 from app.settings import BASE_DIR, API_ID, API_HASH, HOST_FUNC_COUNT
 
 
-def main(number, host=False):
+def main(number, host: int = 0):
     if host:
-        for i in range(HOST_FUNC_COUNT):
-            client = Client(f'host{i}', API_ID, API_HASH, phone_number=number,  workdir=f'{BASE_DIR}/sessions', device_model='PC', app_version='1.0.0')
-            client.start()
+        for i in range(1, HOST_FUNC_COUNT + 1):
+            client = TelegramClient(f'{BASE_DIR}/sessions/{number}-host-{host}-func-{i}', API_ID, API_HASH, receive_updates=False)
+            client.start(lambda: number)
     else:
-        client = Client(number, API_ID, API_HASH, phone_number=number,  workdir=f'{BASE_DIR}/sessions', device_model='PC', app_version='1.0.0')
-        client.start()
+        client = TelegramClient(f'{BASE_DIR}/sessions/{number}', API_ID, API_HASH, receive_updates=False)
+        client.start(lambda: number)

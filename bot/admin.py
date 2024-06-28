@@ -15,7 +15,7 @@ admin.site.enable_nav_sidebar = False
 
 
 class UserBotAdmin(admin.ModelAdmin):
-    list_display = ['created', 'user_id', 'username_custom', 'first_name', 'last_name', 'phone_number']
+    list_display = ['created', 'user_id', 'username_custom', 'first_name', 'last_name', 'phone_number', 'ping_time']
     search_fields = ['user_id', 'username', 'first_name', 'last_name']
     date_hierarchy = 'created'
     list_display_links = None
@@ -71,6 +71,31 @@ class LogAdmin(admin.ModelAdmin):
         return False
 
 
+class PostCheckAdmin(admin.ModelAdmin):
+    list_display = ['post_date', 'channel_custom', 'post_id', 'views']
+    list_display_links = None
+    list_per_page = 25
+
+    search_fields = ['post_id', 'channel__title']
+    list_filter = ['channel__title']
+
+    def channel_custom(self, obj):
+        if obj.channel:
+            return format_html(f'<a href="/bot/channel/{obj.channel.channel_id}">{obj.channel.title}</a>')
+        else:
+            return '-'
+    channel_custom.short_description = _('channel')
+
+    def has_add_permission(self, *args, **kwargs):
+        return False
+
+    def has_change_permission(self, *args, **kwargs):
+        return False
+
+    def has_delete_permission(self, *args, **kwargs):
+        return False
+
+
 class ChannelAdmin(admin.ModelAdmin):
     list_display = ['channel_id', 'title', 'username_custom', 'has_protected_content', 'last_username_change', 'history_days_limit',
                     'delete_albums', 'republish_today_posts', 'deletions_count_for_username_change', 'delete_posts_after_days']
@@ -102,16 +127,18 @@ class ChannelAdmin(admin.ModelAdmin):
 
 
 class LimitationAdmin(admin.ModelAdmin):
-    list_display = ['created', 'channel_custom', 'views_for_deletion', 'views_difference_for_deletion', 'lang_stats_restrictions',
-                    'allowed_languages', 'start_date', 'end_date', 'start_after_days', 'end_after_days']
+    list_display = ['created', 'channel_custom', 'views_for_deletion', 'views_difference_for_deletion',
+                    'views_difference_for_deletion_interval', 'lang_stats_restrictions_custom', 'hourly_distribution',
+                    'start_date', 'end_date', 'start_after_days', 'end_after_days']
     list_per_page = 25
 
     search_fields = ['channel', 'channel__title']
     list_filter = ['lang_stats_restrictions', 'channel__title']
 
     fieldsets = [
-        ('Parameters', {'fields': ['channel', 'views_for_deletion', 'views_difference_for_deletion', 'lang_stats_restrictions',
-                                   'allowed_languages', 'start_date', 'end_date', 'start_after_days', 'end_after_days']}),
+        ('Parameters', {'fields': ['channel', 'views_for_deletion', 'views_difference_for_deletion',
+                                   'views_difference_for_deletion_interval', 'lang_stats_restrictions',
+                                   'hourly_distribution', 'start_date', 'end_date', 'start_after_days', 'end_after_days']}),
     ]
 
     def channel_custom(self, obj):
@@ -120,6 +147,10 @@ class LimitationAdmin(admin.ModelAdmin):
         else:
             return '-'
     channel_custom.short_description = _('channel')
+
+    def lang_stats_restrictions_custom(self, obj):
+        return obj.lang_stats_restrictions or '-'
+    lang_stats_restrictions_custom.short_description = _('lang_stats_restrictions')
 
     def has_add_permission(self, *args, **kwargs):
         return True
@@ -133,8 +164,9 @@ class LimitationAdmin(admin.ModelAdmin):
 
 class SettingsAdmin(PreferencesAdmin):
     fieldsets = [
-        ('Parameters', {'fields': ['admins', 'chatlist_invite', 'username_suffix_length', 'check_post_views_interval',
-                                   'check_post_deletions_interval', 'delete_old_posts_interval',
+        ('Parameters', {'fields': ['admins', 'chatlist_invite', 'archive_channel', 'username_suffix_length',
+                                   'check_post_views_interval', 'check_post_deletions_interval',
+                                   'check_stats_interval', 'delete_old_posts_interval',
                                    'username_change_cooldown', 'individual_allocations']}),
     ]
 
@@ -150,6 +182,7 @@ class SettingsAdmin(PreferencesAdmin):
 
 admin.site.register(models.UserBot, UserBotAdmin)
 admin.site.register(models.Log, LogAdmin)
+admin.site.register(models.PostCheck, PostCheckAdmin)
 admin.site.register(models.Channel, ChannelAdmin)
 admin.site.register(models.Limitation, LimitationAdmin)
 admin.site.register(models.Settings, SettingsAdmin)

@@ -5,8 +5,10 @@ from envparse import env
 from dotenv import load_dotenv
 from django.utils.translation import gettext_lazy as _
 
-DEBUG = True
-logging.basicConfig(level=logging.INFO if DEBUG else logging.WARNING)
+LOG_LEVEL = env.str('LOG_LEVEL', default='INFO')
+DEBUG = LOG_LEVEL == 'DEBUG'
+logging.basicConfig(level=LOG_LEVEL)
+
 local_tz = pytz.timezone('Europe/Kiev')
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -23,7 +25,7 @@ WEBAPP_PORT = env.int('WEBAPP_PORT', default=8080)
 WEBHOOK_DOMAIN = env.str('WEBHOOK_DOMAIN', default='example.com')
 BASE_ADMIN_PATH = f'https://{WEBHOOK_DOMAIN}'
 
-MYSQL_HOST = env.str('MYSQL_HOST', default='localhost') if DEBUG else '127.0.0.1'
+MYSQL_HOST = env.str('MYSQL_HOST', default='localhost')
 MYSQL_PORT = env.int('MYSQL_PORT', default=3306)
 MYSQL_PASSWORD = env.str('MYSQL_PASSWORD', default='')
 MYSQL_USER = env.str('MYSQL_USER', default='')
@@ -36,7 +38,7 @@ CSRF_TRUSTED_ORIGINS = [f'https://{WEBHOOK_DOMAIN}']
 BOT_DEVS = [BOT_ADMINS[0]]
 
 USERBOT_PN_LIST = env.list('USERBOT_PN_LIST', default=[])
-USERBOT_HOST_ID = env.int('USERBOT_HOST_ID', default=0)
+USERBOT_HOST_LIST = env.list('USERBOT_HOST_LIST', default=[])
 
 HOST_FUNC_COUNT = 2
 
@@ -172,6 +174,10 @@ ADMIN_REORDER = [
             {
                 'label': _('a_logs'),
                 'model': 'bot.Log'
+            },
+            {
+                'label': _('a_posts'),
+                'model': 'bot.Post'
             },
         ]
     },
