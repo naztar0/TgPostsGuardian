@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-06-21 22:07+0200\n"
+"POT-Creation-Date: 2024-07-01 16:11+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -28,12 +28,12 @@ msgstr "@юзернейм"
 msgid "userbot"
 msgstr "Юзербот"
 
-#: .\admin.py:62 .\admin.py:87 .\admin.py:149 .\models.py:31 .\models.py:67
-#: .\models.py:72 .\models.py:93 .\models.py:108
+#: .\admin.py:62 .\admin.py:87 .\admin.py:145 .\admin.py:177 .\models.py:31
+#: .\models.py:67 .\models.py:72 .\models.py:89 .\models.py:104
 msgid "channel"
 msgstr "Канал"
 
-#: .\admin.py:153 .\models.py:112
+#: .\admin.py:181 .\models.py:108
 msgid "lang_stats_restrictions"
 msgstr "Ограничения по языковой статистике"
 
@@ -53,19 +53,27 @@ msgstr "📜 Логи"
 msgid "a_posts"
 msgstr "📝 Посты"
 
-#: .\app\settings.py:186
+#: .\app\settings.py:183
+msgid "a_postchecks"
+msgstr "🔍 Проверки постов"
+
+#: .\app\settings.py:187
+msgid "a_statsviews"
+msgstr "📊 Просмотры статистики"
+
+#: .\app\settings.py:194
 msgid "management"
 msgstr "Управление"
 
-#: .\app\settings.py:189
+#: .\app\settings.py:197
 msgid "a_channels"
 msgstr "📢 Каналы"
 
-#: .\app\settings.py:193
+#: .\app\settings.py:201
 msgid "a_limitations"
 msgstr "📝 Ограничения"
 
-#: .\app\settings.py:197
+#: .\app\settings.py:205
 msgid "a_settings"
 msgstr "⚙️ Настройки"
 
@@ -73,7 +81,7 @@ msgstr "⚙️ Настройки"
 msgid "bot"
 msgstr "Бот"
 
-#: .\models.py:9 .\models.py:28 .\models.py:92 .\models.py:107
+#: .\models.py:9 .\models.py:28 .\models.py:88 .\models.py:103
 msgid "created_utc"
 msgstr "🕐 Создано, UTC"
 
@@ -183,7 +191,7 @@ msgstr "Каналы"
 msgid "last_check_utc"
 msgstr "🕐 Последняя проверка, UTC"
 
-#: .\models.py:76 .\models.py:103
+#: .\models.py:76 .\models.py:99
 msgid "views"
 msgstr "Просмотры"
 
@@ -195,31 +203,31 @@ msgstr "Пост"
 msgid "posts"
 msgstr "Посты"
 
-#: .\models.py:94
+#: .\models.py:90
 msgid "language"
 msgstr "Язык"
 
-#: .\models.py:95
+#: .\models.py:91
 msgid "value"
 msgstr "Значение"
 
-#: .\models.py:102
+#: .\models.py:98
 msgid "view"
 msgstr "Просмотр"
 
-#: .\models.py:109
+#: .\models.py:105
 msgid "views_for_deletion"
 msgstr "Просмотров для удаления"
 
-#: .\models.py:110
+#: .\models.py:106
 msgid "views_difference_for_deletion"
 msgstr "Разница просмотров для удаления, %"
 
-#: .\models.py:111
+#: .\models.py:107
 msgid "views_difference_for_deletion_interval_minutes"
 msgstr "Интервал проверки разницы просмотров для удаления, минут"
 
-#: .\models.py:113
+#: .\models.py:109
 msgid "lang_stats_restrictions_help_text"
 msgstr ""
 "Список названий языков и количества просмотров, разделенных переносами строк."
@@ -227,100 +235,100 @@ msgstr ""
 "<br>Используйте * для определения количества просмотров на других языках."
 "<br>Пример:<br>English 1000<br>Ukrainian 20%<br>Russian 5%<br>* 100"
 
-#: .\models.py:114
+#: .\models.py:110
 msgid "hourly_distribution"
 msgstr "Распределение по часам"
 
-#: .\models.py:115
+#: .\models.py:111
 msgid "hourly_distribution_help_text"
 msgstr ""
 "Распределять ограничения просмотров по часам. Если включено, ограничения "
 "будут вычисляться так: (ограничение / 24) * текущий час"
 
-#: .\models.py:116
+#: .\models.py:112
 msgid "start_date_utc"
 msgstr "📆 Дата начала, UTC"
 
-#: .\models.py:117
+#: .\models.py:113
 msgid "end_date_utc"
 msgstr "📆 Дата окончания, UTC"
 
-#: .\models.py:118
+#: .\models.py:114
 msgid "start_after_days"
 msgstr "Начать спустя N дней"
 
-#: .\models.py:119
+#: .\models.py:115
 msgid "end_after_days"
 msgstr "Завершить спустя N дней"
 
-#: .\models.py:158
+#: .\models.py:154
 msgid "limitation"
 msgstr "Ограничение"
 
-#: .\models.py:159
+#: .\models.py:155
 msgid "limitations"
 msgstr "Ограничения"
 
-#: .\models.py:163
+#: .\models.py:159
 msgid "admin_list"
 msgstr "Список администраторов"
 
-#: .\models.py:164
+#: .\models.py:160
 msgid "admins_help_text"
 msgstr "Список ID администраторов, разделенных пробелами или переносами строк"
 
-#: .\models.py:165
+#: .\models.py:161
 msgid "chatlist_invite"
 msgstr "Приглашение в папку чатов"
 
-#: .\models.py:166
+#: .\models.py:162
 msgid "archive_channel_id"
 msgstr "ID архивного канала"
 
-#: .\models.py:167
+#: .\models.py:163
 msgid "username_suffix_length"
 msgstr "Длина суффикса юзернейма"
 
-#: .\models.py:168
+#: .\models.py:164
 msgid "check_post_views_interval_seconds"
 msgstr "Интервал проверки просмотров постов, секунд"
 
-#: .\models.py:169
+#: .\models.py:165
 msgid "check_post_deletions_interval_seconds"
 msgstr "Интервал проверки удалений постов, секунд"
 
-#: .\models.py:170
+#: .\models.py:166
 msgid "check_stats_interval_seconds"
 msgstr "Интервал проверки статистики, секунд"
 
-#: .\models.py:171
+#: .\models.py:167
 msgid "delete_old_posts_interval_minutes"
 msgstr "Интервал удаления старых постов, минут"
 
-#: .\models.py:172
+#: .\models.py:168
 msgid "username_change_cooldown_minutes"
 msgstr "Интервал смены юзернеймов, минут"
 
-#: .\models.py:173
+#: .\models.py:169
 msgid "individual_allocations"
 msgstr "Индивидуальные выделения"
 
-#: .\models.py:174
+#: .\models.py:170
 msgid "individual_allocations_help_text"
 msgstr ""
-"Выделять юзерботов индивидуально для каждого канала.<br>"
-"Если количество юзерботов не совпадает с количеством каналов, юзерботы будут выделены по кругу.<br>"
-"Если выключено, все юзерботы будут выделены для всех каналов."
+"Выделять юзерботов индивидуально для каждого канала.<br>Если количество "
+"юзерботов не совпадает с количеством каналов, юзерботы будут выделены по "
+"кругу.<br>Если выключено, все юзерботы будут выделены для всех каналов."
 
-#: .\models.py:177
+#: .\models.py:173
 msgid "settings"
 msgstr "Настройки"
 
-#: .\models.py:180
+#: .\models.py:176
 msgid "list"
 msgstr "Список"
 
-#: .\models.py:181
+#: .\models.py:177
 msgid "lists"
 msgstr "Списки"
 
