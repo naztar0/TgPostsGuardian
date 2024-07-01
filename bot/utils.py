@@ -62,14 +62,14 @@ async def can_change_username(channel: models.Channel, events_count: int, events
     ).acount()
     return (
             events_count >= events_limit * (daily_username_changes_count + 1) and
-            channel.last_username_change and
-            channel.last_username_change < now - timedelta(minutes=preferences.Settings.username_change_cooldown)
+            (channel.last_username_change is None or
+             channel.last_username_change < now - timedelta(minutes=preferences.Settings.username_change_cooldown))
     )
 
 
 class LanguageStats:
     def __init__(self):
-        self.today = datetime.now(timezone.utc).date() - timedelta(days=1)
+        self.today = datetime.now(timezone.utc).date()
         self.restrictions: dict[str, int] = {}  # {'English': 1000, 'Russian': -5} (minus means percentage)
         self.data: dict[date_t: dict[str, int]] = {}  # {'2021-01-21': {'English': 1000, 'Russian': 500}}
 
@@ -125,3 +125,9 @@ def init_logger(number):
     for handler in logger.handlers:
         handler.setFormatter(formatter)
     return logger
+
+
+def day_start(date: datetime = None):
+    if date is None:
+        date = datetime.now(timezone.utc)
+    return datetime(date.year, date.month, date.day, tzinfo=timezone.utc)

@@ -14,6 +14,7 @@ from telethon.tl.types.chatlists import ChatlistInvite
 from telethon.tl.types.channels import ChannelParticipants
 from telethon.tl.functions.channels import GetParticipantsRequest, EditAdminRequest, UpdateUsernameRequest
 from telethon.tl.functions.chatlists import JoinChatlistInviteRequest, CheckChatlistInviteRequest
+from telethon.errors.rpcerrorlist import ChatAdminRequiredError
 
 from app.settings import BASE_DIR, API_ID, API_HASH, USERBOT_PN_LIST, USERBOT_HOST_LIST
 from bot import models, utils
@@ -317,7 +318,8 @@ class App:
 
     async def handle_view_diff_limitation(self, channel, language, current_views, max_diff, interval):
         last_views: models.StatsViews = await models.StatsViews.objects \
-            .filter(channel=channel, language=language).order_by('-created').afirst()
+            .filter(channel=channel, language=language, created__gte=utils.day_start()) \
+            .order_by('-created').afirst()
         logging.info(f'Language: {language}, current views: {current_views}')
         if not last_views:
             last_views = await models.StatsViews.objects.acreate(channel=channel, language=language, value=current_views)
@@ -332,13 +334,17 @@ class App:
 
     async def check_lang_stats(self):
         async for channel in await self.get_channels():
-            logging.info(f'Checking channel {channel.channel_id}')
-            stats, graphs = await get_stats_with_graphs(self.client, channel.v2_id, ['languages_graph'])
+            logging.info(f'Checking channel lang stats {channel.title} ({channel.channel_id})')
+            try:
+                stats, graphs = await get_stats_with_graphs(self.client, channel.v2_id, ['languages_graph'])
+            except ChatAdminRequiredError:
+                logging.error(f'Cant get stats for {channel.title}')
+                continue
             async for limitation in models.Limitation.objects.filter(channel=channel).order_by('-created'):
                 if not limitation.lang_stats_restrictions:
                     continue
                 lang_stats = utils.LanguageStats()
-                lang_stats.get_languages_graph_views(graphs, days=7)
+                lang_stats.get_languages_graph_views(graphs, days=1)
                 lang_stats.parse_lang_stats_restrictions(limitation.lang_stats_restrictions)
                 if limitation.views_for_deletion:
                     if await self.handle_view_limitation(
