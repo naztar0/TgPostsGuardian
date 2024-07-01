@@ -126,6 +126,34 @@ class ChannelAdmin(admin.ModelAdmin):
         return True
 
 
+class StatsViewsAdmin(admin.ModelAdmin):
+    list_display = ['created', 'channel_custom', 'language', 'value']
+    list_per_page = 25
+
+    search_fields = ['channel__title']
+    list_filter = ['channel__title']
+
+    fieldsets = [
+        ('Parameters', {'fields': ['channel']}),
+    ]
+
+    def channel_custom(self, obj):
+        if obj.channel:
+            return format_html(f'<a href="/bot/channel/?q={obj.channel.channel_id}">{obj.channel.title}</a>')
+        else:
+            return '-'
+    channel_custom.short_description = _('channel')
+
+    def has_add_permission(self, *args, **kwargs):
+        return False
+
+    def has_change_permission(self, *args, **kwargs):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
 class LimitationAdmin(admin.ModelAdmin):
     list_display = ['created', 'channel_custom', 'views_for_deletion', 'views_difference_for_deletion',
                     'views_difference_for_deletion_interval', 'lang_stats_restrictions_custom', 'hourly_distribution',
@@ -184,5 +212,6 @@ admin.site.register(models.UserBot, UserBotAdmin)
 admin.site.register(models.Log, LogAdmin)
 admin.site.register(models.PostCheck, PostCheckAdmin)
 admin.site.register(models.Channel, ChannelAdmin)
+admin.site.register(models.StatsViews, StatsViewsAdmin)
 admin.site.register(models.Limitation, LimitationAdmin)
 admin.site.register(models.Settings, SettingsAdmin)
