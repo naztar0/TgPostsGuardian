@@ -179,6 +179,14 @@ ADMIN_REORDER = [
                 'label': _('a_posts'),
                 'model': 'bot.Post'
             },
+            {
+                'label': _('a_postchecks'),
+                'model': 'bot.PostCheck'
+            },
+            {
+                'label': _('a_statsviews'),
+                'model': 'bot.StatsViews'
+            },
         ]
     },
     {
