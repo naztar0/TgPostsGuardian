@@ -18,6 +18,7 @@ from telethon.errors.rpcerrorlist import ChatAdminRequiredError
 
 from app.settings import BASE_DIR, API_ID, API_HASH, USERBOT_PN_LIST, USERBOT_HOST_LIST
 from bot import models, utils
+from bot.types import UsernameChangeReason
 from bot.utils_lib.stats import get_stats_with_graphs
 
 
@@ -101,7 +102,7 @@ class App:
             if user.phone_number not in USERBOT_HOST_LIST and user.phone_number not in USERBOT_PN_LIST:
                 await user.adelete()
 
-        async for channel in models.Channel.objects.all():
+        async for channel in models.Channel.objects.filter(owner=self.userbot):
             peer = await self.client.get_input_entity(channel.v2_id)
             peer = InputChannel(peer.channel_id, peer.access_hash)
             cp: ChannelParticipants = await self.client(
@@ -115,7 +116,7 @@ class App:
             )
             admins = [admin.user_id for admin in cp.participants]
             async for user in models.UserBot.objects.all():
-                if user.user_id not in admins:
+                if user.phone_number not in USERBOT_HOST_LIST and user.user_id not in admins:
                     privileges = types.TypeChatAdminRights(delete_messages=True, post_messages=True, edit_messages=True, change_info=True)
                     await self.client(EditAdminRequest(channel.v2_id, user.user_id, privileges, ''))
                     logging.info(f'Promoted {user.user_id} to admin in {channel.title}')
@@ -146,7 +147,7 @@ class App:
             ))
             logging.info(f'Joined {len(channels)} channels: {", ".join([channel.title for channel in channels])}')
 
-    async def change_username(self, channel: models.Channel):
+    async def change_username(self, channel: models.Channel, reason):
         for _ in range(3):
             new_username = utils.rand_username(channel.username)
             logging.info(f'Updating channel {channel.title} username to {new_username}')
@@ -155,15 +156,29 @@ class App:
                 channel.username = new_username
                 channel.last_username_change = datetime.now(timezone.utc)
                 await channel.asave()
-                await models.Log.objects.acreate(type=models.types.Log.USERNAME_CHANGE, userbot=self.userbot, channel=channel)
+                await models.Log.objects.acreate(
+                    type=models.types.Log.USERNAME_CHANGE,
+                    userbot=self.userbot,
+                    channel=channel,
+                    reason=reason
+                )
                 return new_username
             except Exception as e:
-                await models.Log.objects.acreate(type=models.types.Log.USERNAME_CHANGE, userbot=self.userbot, channel=channel, success=False)
+                await models.Log.objects.acreate(
+                    type=models.types.Log.USERNAME_CHANGE,
+                    userbot=self.userbot,
+                    channel=channel,
+                    success=False,
+                    reason=reason,
+                    error_message=str(e)[-256:]
+                )
                 logging.error(e)
                 await sleep(5)
 
-    async def get_channels(self):
+    async def get_channels(self, owner=False):
         channels = models.Channel.objects.all()
+        if owner:
+            channels = channels.filter(owner=self.userbot)
         if preferences.Settings.individual_allocations:
             channels_count = await channels.acount()
             userbot_count = await models.UserBot.objects.acount()
@@ -175,7 +190,7 @@ class App:
 
     async def check_post_deletions(self):
         now = datetime.now(timezone.utc)
-        async for channel in models.Channel.objects.all():
+        async for channel in models.Channel.objects.filter(owner=self.userbot):
             await self.refresh_channel(channel)
             daily_deletions_count = await models.Log.objects.filter(
                 channel=channel, type=models.types.Log.DELETION, success=True,
@@ -186,7 +201,7 @@ class App:
                     channel.deletions_count_for_username_change and
                     await utils.can_change_username(channel, daily_deletions_count, channel.deletions_count_for_username_change)
             ):
-                await self.change_username(channel)
+                await self.change_username(channel, UsernameChangeReason.DELETIONS_LIMIT)
 
     async def delete_old_posts(self):
         now = datetime.now(timezone.utc)
@@ -311,7 +326,7 @@ class App:
             max_views //= 24 - datetime.now(timezone.utc).hour
         logging.info(f'Views: {current_views}, max views: {max_views}')
         if current_views > max_views and await utils.can_change_username(channel, current_views, max_views):
-            await self.change_username(channel)
+            await self.change_username(channel, UsernameChangeReason.LANGUAGE_STATS_VIEWS_LIMIT)
             await sleep(30)
             return True
         return False
@@ -327,18 +342,18 @@ class App:
             percent_diff = (current_views - last_views.value) * 100 / last_views.value
             logging.info(f'Percent: {percent_diff}, max percent: {max_diff}')
             if percent_diff > max_diff and await utils.can_change_username(channel, percent_diff, max_diff):
-                await self.change_username(channel)
+                await self.change_username(channel, UsernameChangeReason.LANGUAGE_STATS_VIEWS_DIFFERENCE_LIMIT)
                 await sleep(30)
                 return True
         return False
 
     async def check_lang_stats(self):
-        async for channel in await self.get_channels():
+        async for channel in await self.get_channels(owner=True):
             logging.info(f'Checking channel lang stats {channel.title} ({channel.channel_id})')
             try:
                 stats, graphs = await get_stats_with_graphs(self.client, channel.v2_id, ['languages_graph'])
             except ChatAdminRequiredError:
-                logging.error(f'Cant get stats for {channel.title}')
+                logging.warning(f'Cant get stats for {channel.title}')
                 continue
             async for limitation in models.Limitation.objects.filter(channel=channel).order_by('-created'):
                 if not limitation.lang_stats_restrictions:
@@ -412,7 +427,7 @@ class App:
         channel_id_v1 = abs(int(str(channel_id_v2)[3:]))
 
         channel = await database_sync_to_async(models.Channel.objects.get)(channel_id=channel_id_v1)
-        username = await self.change_username(channel)
+        username = await self.change_username(channel, UsernameChangeReason.THIRD_PARTY_REQUEST)
 
         result = json.dumps({'channel_id': channel_id_v2, 'username': username or channel.username})
         await event.respond(f'/update_username {result}')

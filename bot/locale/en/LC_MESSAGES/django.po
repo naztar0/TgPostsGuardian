@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-01 16:11+0200\n"
+"POT-Creation-Date: 2024-07-16 12:49+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,7 +18,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: .\admin.py:29 .\admin.py:117 .\models.py:11 .\models.py:49
+#: .\admin.py:29 .\admin.py:117 .\models.py:11 .\models.py:55
 msgid "@username"
 msgstr "@username"
 
@@ -26,12 +26,16 @@ msgstr "@username"
 msgid "userbot"
 msgstr "Userbot"
 
-#: .\admin.py:62 .\admin.py:87 .\admin.py:145 .\admin.py:177 .\models.py:31
-#: .\models.py:67 .\models.py:72 .\models.py:89 .\models.py:104
+#: .\admin.py:62 .\admin.py:87 .\admin.py:152 .\admin.py:184 .\models.py:35
+#: .\models.py:74 .\models.py:79 .\models.py:96 .\models.py:111
 msgid "channel"
 msgstr "Channel"
 
-#: .\admin.py:181 .\models.py:108
+#: .\admin.py:124 .\models.py:56
+msgid "owner"
+msgstr "Owner"
+
+#: .\admin.py:188 .\models.py:115
 msgid "lang_stats_restrictions"
 msgstr "Language stats restrictions"
 
@@ -79,11 +83,11 @@ msgstr "⚙️ Settings"
 msgid "bot"
 msgstr "Bot"
 
-#: .\models.py:9 .\models.py:28 .\models.py:88 .\models.py:103
+#: .\models.py:9 .\models.py:32 .\models.py:95 .\models.py:110
 msgid "created_utc"
 msgstr "🕐 Created, UTC"
 
-#: .\models.py:10 .\models.py:47 .\models.py:75
+#: .\models.py:10 .\models.py:53 .\models.py:82
 msgid "id"
 msgstr "ID"
 
@@ -115,117 +119,141 @@ msgstr "🗑️ Deletion"
 msgid "username_change"
 msgstr "👤 Username change"
 
+#: .\models.py:28
+msgid "deletions_limit"
+msgstr "🗑️ Deletions limit"
+
 #: .\models.py:29
+msgid "language_stats_views_limit"
+msgstr "📊 Language stats views limit"
+
+#: .\models.py:30
+msgid "language_stats_views_difference_limit"
+msgstr "📊 Language stats views difference limit"
+
+#: .\models.py:31
+msgid "third_party_request"
+msgstr "🔗 Third party request"
+
+#: .\models.py:33
 msgid "type"
 msgstr "Type"
 
-#: .\models.py:32
+#: .\models.py:36
 msgid "post_id"
 msgstr "Post ID"
 
-#: .\models.py:33 .\models.py:73
+#: .\models.py:37 .\models.py:80
 msgid "post_date_utc"
 msgstr "🕐 Post date, UTC"
 
-#: .\models.py:34
+#: .\models.py:38
 msgid "post_views"
 msgstr "👀 Post views"
 
-#: .\models.py:35
+#: .\models.py:39
+msgid "reason"
+msgstr "Reason"
+
+#: .\models.py:40
+msgid "error_message"
+msgstr "Error message"
+
+#: .\models.py:41
 msgid "success"
 msgstr "Success"
 
-#: .\models.py:42
+#: .\models.py:48
 msgid "log"
 msgstr "Log"
 
-#: .\models.py:43
+#: .\models.py:49
 msgid "logs"
 msgstr "Logs"
 
-#: .\models.py:48
+#: .\models.py:54
 msgid "title"
 msgstr "Title"
 
-#: .\models.py:50
+#: .\models.py:57
 msgid "has_protected_content"
 msgstr "Has protected content"
 
-#: .\models.py:51
+#: .\models.py:58
 msgid "last_username_change_utc"
 msgstr "🕐 Last username change, UTC"
 
-#: .\models.py:52
+#: .\models.py:59
 msgid "history_days_limit"
 msgstr "History days limit"
 
-#: .\models.py:53
+#: .\models.py:60
 msgid "delete_albums"
 msgstr "Delete albums"
 
-#: .\models.py:54
+#: .\models.py:61
 msgid "republish_today_deleted_posts"
 msgstr "Republish today deleted posts"
 
-#: .\models.py:55
+#: .\models.py:62
 msgid "deletions_count_for_username_change"
 msgstr "Deletions count for username change"
 
-#: .\models.py:56
+#: .\models.py:63
 msgid "deletions_count_for_username_change_help_text"
 msgstr ""
 "If the number of deletions is less than this value, the username will not be "
 "changed<br>If 0, the username will not be change"
 
-#: .\models.py:57
+#: .\models.py:64
 msgid "delete_all_posts_after_days"
 msgstr "Delete all posts after days"
 
-#: .\models.py:68
+#: .\models.py:75
 msgid "channels"
 msgstr "Channels"
 
-#: .\models.py:74
+#: .\models.py:81
 msgid "last_check_utc"
 msgstr "🕐 Last check, UTC"
 
-#: .\models.py:76 .\models.py:99
+#: .\models.py:83 .\models.py:106
 msgid "views"
 msgstr "Views"
 
-#: .\models.py:83
+#: .\models.py:90
 msgid "post"
 msgstr "Post"
 
-#: .\models.py:84
+#: .\models.py:91
 msgid "posts"
 msgstr "Posts"
 
-#: .\models.py:90
+#: .\models.py:97
 msgid "language"
 msgstr "Language"
 
-#: .\models.py:91
+#: .\models.py:98
 msgid "value"
 msgstr "Value"
 
-#: .\models.py:98
+#: .\models.py:105
 msgid "view"
 msgstr "View"
 
-#: .\models.py:105
+#: .\models.py:112
 msgid "views_for_deletion"
 msgstr "Views for deletion"
 
-#: .\models.py:106
+#: .\models.py:113
 msgid "views_difference_for_deletion"
 msgstr "Views difference for deletion, %"
 
-#: .\models.py:107
+#: .\models.py:114
 msgid "views_difference_for_deletion_interval_minutes"
 msgstr "View difference check interval for deletion, minutes"
 
-#: .\models.py:109
+#: .\models.py:116
 msgid "lang_stats_restrictions_help_text"
 msgstr ""
 "List of language names and views count separated by line breaks.<br>Use % "
@@ -233,100 +261,100 @@ msgstr ""
 "defining other languages views count.<br>Example:<br>English "
 "1000<br>Ukrainian 20%<br>Russian 5%<br>* 100"
 
-#: .\models.py:110
+#: .\models.py:117
 msgid "hourly_distribution"
 msgstr "Hourly distribution"
 
-#: .\models.py:111
+#: .\models.py:118
 msgid "hourly_distribution_help_text"
 msgstr ""
 "Distribute views restrictions hourly. If enabled, restrictions will be "
 "calculated as: (restriction / 24) * current hour"
 
-#: .\models.py:112
+#: .\models.py:119
 msgid "start_date_utc"
 msgstr "📆 Start date, UTC"
 
-#: .\models.py:113
+#: .\models.py:120
 msgid "end_date_utc"
 msgstr "📆 End date, UTC"
 
-#: .\models.py:114
+#: .\models.py:121
 msgid "start_after_days"
 msgstr "Start after days"
 
-#: .\models.py:115
+#: .\models.py:122
 msgid "end_after_days"
 msgstr "End after days"
 
-#: .\models.py:154
+#: .\models.py:161
 msgid "limitation"
 msgstr "Limitation"
 
-#: .\models.py:155
+#: .\models.py:162
 msgid "limitations"
 msgstr "Limitations"
 
-#: .\models.py:159
+#: .\models.py:166
 msgid "admin_list"
 msgstr "Admin list"
 
-#: .\models.py:160
+#: .\models.py:167
 msgid "admins_help_text"
 msgstr "List of admin IDs separated by spaces or line breaks"
 
-#: .\models.py:161
+#: .\models.py:168
 msgid "chatlist_invite"
 msgstr "Chatlist invite"
 
-#: .\models.py:162
+#: .\models.py:169
 msgid "archive_channel_id"
 msgstr "Archive channel ID"
 
-#: .\models.py:163
+#: .\models.py:170
 msgid "username_suffix_length"
 msgstr "Username suffix length"
 
-#: .\models.py:164
+#: .\models.py:171
 msgid "check_post_views_interval_seconds"
 msgstr "Check post views interval, seconds"
 
-#: .\models.py:165
+#: .\models.py:172
 msgid "check_post_deletions_interval_seconds"
 msgstr "Check post deletions interval, seconds"
 
-#: .\models.py:166
+#: .\models.py:173
 msgid "check_stats_interval_seconds"
 msgstr "Check stats interval, seconds"
 
-#: .\models.py:167
+#: .\models.py:174
 msgid "delete_old_posts_interval_minutes"
 msgstr "Delete old posts interval, minutes"
 
-#: .\models.py:168
+#: .\models.py:175
 msgid "username_change_cooldown_minutes"
 msgstr "Username change cooldown, minutes"
 
-#: .\models.py:169
+#: .\models.py:176
 msgid "individual_allocations"
 msgstr "Individual allocations"
 
-#: .\models.py:170
+#: .\models.py:177
 msgid "individual_allocations_help_text"
 msgstr ""
 "Allocate userbots individually for each channel.<br>If the number of "
 "userbots does not match the number of channels, userbots will be allocated "
 "in a circle.<br>If disabled, all userbots will be allocated for all channels."
 
-#: .\models.py:173
+#: .\models.py:180
 msgid "settings"
 msgstr "Settings"
 
-#: .\models.py:176
+#: .\models.py:183
 msgid "list"
 msgstr "List"
 
-#: .\models.py:177
+#: .\models.py:184
 msgid "lists"
 msgstr "Lists"
 
@@ -350,17 +378,3 @@ msgstr ""
 #: .\templates\admin\text_change_form.html:57
 msgid "Please correct the errors below."
 msgstr ""
-
-#~ msgid "total"
-#~ msgstr "Total"
-
-#~ msgid "restricted"
-#~ msgstr "Restricted"
-
-#~ msgid "views_restricted_for_deletion"
-#~ msgstr "Restricted views for deletion"
-
-#~ msgid "allowed_languages_help_text"
-#~ msgstr ""
-#~ "List of allowed languages separated by spaces<br>If other languages views "
-#~ "count is more than allowed views count, the post will be deleted"

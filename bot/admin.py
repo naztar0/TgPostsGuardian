@@ -39,13 +39,16 @@ class UserBotAdmin(admin.ModelAdmin):
 
 
 class LogAdmin(admin.ModelAdmin):
-    list_display = ['created', 'user_custom', 'type', 'channel_custom', 'post_date', 'post_views', 'success']
-    list_display_links = None
+    list_display = ['created', 'user_custom', 'type', 'channel_custom', 'post_date', 'post_views', 'success', 'reason']
     list_per_page = 25
 
     date_hierarchy = 'created'
     search_fields = ['userbot__first_name', 'userbot__last_name', 'channel__channel_title']
-    list_filter = ['type', 'success', 'channel__title']
+    list_filter = ['type', 'success', 'channel__title', 'reason']
+
+    fieldsets = [
+        ('Parameters', {'fields': ['userbot', 'type', 'channel', 'post_id', 'post_date', 'post_views', 'reason', 'success', 'error_message']}),
+    ]
 
     def user_custom(self, obj):
         if obj.userbot:
@@ -97,15 +100,15 @@ class PostCheckAdmin(admin.ModelAdmin):
 
 
 class ChannelAdmin(admin.ModelAdmin):
-    list_display = ['channel_id', 'title', 'username_custom', 'has_protected_content', 'last_username_change', 'history_days_limit',
+    list_display = ['channel_id', 'title', 'username_custom', 'owner_custom', 'has_protected_content', 'last_username_change', 'history_days_limit',
                     'delete_albums', 'republish_today_posts', 'deletions_count_for_username_change', 'delete_posts_after_days']
     list_per_page = 25
 
     search_fields = ['channel_id', 'title', 'username']
-    list_filter = ['has_protected_content', 'delete_albums', 'republish_today_posts']
+    list_filter = ['owner', 'has_protected_content', 'delete_albums', 'republish_today_posts']
 
     fieldsets = [
-        ('Parameters', {'fields': ['channel_id', 'history_days_limit', 'delete_albums', 'republish_today_posts',
+        ('Parameters', {'fields': ['channel_id', 'owner', 'history_days_limit', 'delete_albums', 'republish_today_posts',
                                    'deletions_count_for_username_change', 'delete_posts_after_days']}),
     ]
 
@@ -115,6 +118,13 @@ class ChannelAdmin(admin.ModelAdmin):
         else:
             return '-'
     username_custom.short_description = _('@username')
+
+    def owner_custom(self, obj):
+        if obj.owner:
+            return format_html(f'<a href="/bot/user/?q={obj.owner.user_id}">{obj.owner.first_name}&nbsp;{obj.owner.last_name}</a>')
+        else:
+            return '-'
+    owner_custom.short_description = _('owner')
 
     def has_add_permission(self, *args, **kwargs):
         return True

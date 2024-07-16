@@ -25,6 +25,10 @@ class UserBot(models.Model):
 
 class Log(models.Model):
     TYPES = ((types.Log.DELETION, _('deletion')), (types.Log.USERNAME_CHANGE, _('username_change')))
+    REASONS = ((types.UsernameChangeReason.DELETIONS_LIMIT, _('deletions_limit')),
+               (types.UsernameChangeReason.LANGUAGE_STATS_VIEWS_LIMIT, _('language_stats_views_limit')),
+               (types.UsernameChangeReason.LANGUAGE_STATS_VIEWS_DIFFERENCE_LIMIT, _('language_stats_views_difference_limit')),
+               (types.UsernameChangeReason.THIRD_PARTY_REQUEST, _('third_party_request')))
     created = models.DateTimeField(_('created_utc'), auto_now_add=True)
     type = models.CharField(_('type'), max_length=16, choices=TYPES)
     userbot = models.ForeignKey(UserBot, models.CASCADE)
@@ -32,10 +36,12 @@ class Log(models.Model):
     post_id = models.BigIntegerField(_('post_id'), blank=True, null=True, default=None)
     post_date = models.DateTimeField(_('post_date_utc'), blank=True, null=True, default=None)
     post_views = models.PositiveBigIntegerField(_('post_views'), blank=True, null=True, default=None)
+    reason = models.CharField(_('reason'), max_length=64, choices=REASONS, blank=True, null=True)
+    error_message = models.CharField(_('error_message'), max_length=256, blank=True, null=True)
     success = models.BooleanField(_('success'), default=True)
 
     def __str__(self):
-        return str(self.type)
+        return self.created.strftime('%Y-%m-%d %H:%M:%S')
 
     class Meta:
         ordering = ('-created',)
@@ -47,6 +53,7 @@ class Channel(models.Model):
     channel_id = models.BigIntegerField(_('id'), unique=True, primary_key=True)
     title = models.CharField(_('title'), max_length=256, blank=True, null=True)
     username = models.CharField(_('@username'), max_length=256, blank=True, null=True)
+    owner = models.ForeignKey(UserBot, models.SET_NULL, verbose_name=_('owner'), blank=True, null=True)
     has_protected_content = models.BooleanField(_('has_protected_content'), default=False)
     last_username_change = models.DateTimeField(_('last_username_change_utc'), blank=True, null=True, default=None)
     history_days_limit = models.PositiveSmallIntegerField(_('history_days_limit'), default=30)

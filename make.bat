@@ -9,8 +9,7 @@ mklink /D %CD%\bot\templates %CD%\templates
 
 echo Creating translations
 cd bot ^
-    && django-admin makemessages -l en --symlinks ^
-    && django-admin makemessages -l ru --symlinks ^
+    && django-admin makemessages -l en -l ru --symlinks ^
     && django-admin compilemessages ^
     && cd ..
 
