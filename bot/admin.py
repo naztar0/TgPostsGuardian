@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from django.contrib.auth.models import User as DjangoUser, Group as DjangoGroup
-from preferences.admin import PreferencesAdmin
+from solo.admin import SingletonModelAdmin
 
 from bot import models
 
@@ -39,13 +39,16 @@ class UserBotAdmin(admin.ModelAdmin):
 
 
 class LogAdmin(admin.ModelAdmin):
-    list_display = ['created', 'user_custom', 'type', 'channel_custom', 'post_date', 'post_views', 'success']
-    list_display_links = None
+    list_display = ['created', 'user_custom', 'type', 'channel_custom', 'post_date', 'post_views', 'success', 'reason']
     list_per_page = 25
 
     date_hierarchy = 'created'
     search_fields = ['userbot__first_name', 'userbot__last_name', 'channel__channel_title']
-    list_filter = ['type', 'success', 'channel__title']
+    list_filter = ['type', 'success', 'channel__title', 'reason']
+
+    fieldsets = [
+        (_('parameters'), {'fields': ['userbot', 'type', 'channel', 'post_id', 'post_date', 'post_views', 'reason', 'success', 'error_message']}),
+    ]
 
     def user_custom(self, obj):
         if obj.userbot:
@@ -97,16 +100,16 @@ class PostCheckAdmin(admin.ModelAdmin):
 
 
 class ChannelAdmin(admin.ModelAdmin):
-    list_display = ['channel_id', 'title', 'username_custom', 'has_protected_content', 'last_username_change', 'history_days_limit',
+    list_display = ['channel_id', 'title', 'username_custom', 'owner_custom', 'has_protected_content', 'last_username_change', 'history_days_limit',
                     'delete_albums', 'republish_today_posts', 'deletions_count_for_username_change', 'delete_posts_after_days']
     list_per_page = 25
 
     search_fields = ['channel_id', 'title', 'username']
-    list_filter = ['has_protected_content', 'delete_albums', 'republish_today_posts']
+    list_filter = ['owner', 'has_protected_content', 'delete_albums', 'republish_today_posts']
 
     fieldsets = [
-        ('Parameters', {'fields': ['channel_id', 'history_days_limit', 'delete_albums', 'republish_today_posts',
-                                   'deletions_count_for_username_change', 'delete_posts_after_days']}),
+        (_('parameters'), {'fields': ['channel_id', 'owner', 'history_days_limit', 'delete_albums', 'republish_today_posts',
+                                      'deletions_count_for_username_change', 'delete_posts_after_days']}),
     ]
 
     def username_custom(self, obj):
@@ -115,6 +118,13 @@ class ChannelAdmin(admin.ModelAdmin):
         else:
             return '-'
     username_custom.short_description = _('@username')
+
+    def owner_custom(self, obj):
+        if obj.owner:
+            return format_html(f'<a href="/bot/user/?q={obj.owner.user_id}">{obj.owner.first_name}&nbsp;{obj.owner.last_name}</a>')
+        else:
+            return '-'
+    owner_custom.short_description = _('owner')
 
     def has_add_permission(self, *args, **kwargs):
         return True
@@ -134,7 +144,7 @@ class StatsViewsAdmin(admin.ModelAdmin):
     list_filter = ['channel__title']
 
     fieldsets = [
-        ('Parameters', {'fields': ['channel']}),
+        (_('parameters'), {'fields': ['channel']}),
     ]
 
     def channel_custom(self, obj):
@@ -164,9 +174,9 @@ class LimitationAdmin(admin.ModelAdmin):
     list_filter = ['lang_stats_restrictions', 'channel__title']
 
     fieldsets = [
-        ('Parameters', {'fields': ['channel', 'views_for_deletion', 'views_difference_for_deletion',
-                                   'views_difference_for_deletion_interval', 'lang_stats_restrictions',
-                                   'hourly_distribution', 'start_date', 'end_date', 'start_after_days', 'end_after_days']}),
+        (_('parameters'), {'fields': ['channel', 'views_for_deletion', 'views_difference_for_deletion',
+                                      'views_difference_for_deletion_interval', 'lang_stats_restrictions',
+                                      'hourly_distribution', 'start_date', 'end_date', 'start_after_days', 'end_after_days']}),
     ]
 
     def channel_custom(self, obj):
@@ -190,12 +200,12 @@ class LimitationAdmin(admin.ModelAdmin):
         return True
 
 
-class SettingsAdmin(PreferencesAdmin):
+class SettingsAdmin(SingletonModelAdmin):
     fieldsets = [
-        ('Parameters', {'fields': ['admins', 'chatlist_invite', 'archive_channel', 'username_suffix_length',
-                                   'check_post_views_interval', 'check_post_deletions_interval',
-                                   'check_stats_interval', 'delete_old_posts_interval',
-                                   'username_change_cooldown', 'individual_allocations']}),
+        (_('parameters'), {'fields': ['admins', 'chatlist_invite', 'archive_channel', 'username_suffix_length',
+                                      'check_post_views_interval', 'check_post_deletions_interval',
+                                      'check_stats_interval', 'delete_old_posts_interval',
+                                      'username_change_cooldown', 'individual_allocations']}),
     ]
 
     def has_add_permission(self, *args, **kwargs):

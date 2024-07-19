@@ -6,8 +6,8 @@ from asyncio import sleep
 from datetime import datetime, timedelta, timezone, date as date_t
 from telethon import TelegramClient, types
 from telethon.errors import FloodWaitError
-from preferences import preferences
 from bot import models
+from bot.types import Log
 
 
 async def loop_wrapper(func, sleep_time, *args, **kwargs):
@@ -57,13 +57,14 @@ def get_media_file_id(message: types.Message):
 async def can_change_username(channel: models.Channel, events_count: int, events_limit: int):
     now = datetime.now(timezone.utc)
     daily_username_changes_count = await models.Log.objects.filter(
-        channel=channel, type=models.types.Log.USERNAME_CHANGE, success=True,
+        channel=channel, type=Log.USERNAME_CHANGE, success=True,
         created__year=now.year, created__month=now.month, created__day=now.day,
     ).acount()
+    settings = await models.Settings.objects.aget()
     return (
             events_count >= events_limit * (daily_username_changes_count + 1) and
             (channel.last_username_change is None or
-             channel.last_username_change < now - timedelta(minutes=preferences.Settings.username_change_cooldown))
+             channel.last_username_change < now - timedelta(minutes=settings.username_change_cooldown))
     )
 
 
@@ -110,8 +111,8 @@ class LanguageStats:
         return sum(value for lang, value in self.data[date].items() if lang not in self.restrictions)
 
 
-def rand_username(username):
-    sl = preferences.Settings.username_suffix_length or 1
+async def rand_username(username):
+    sl = (await models.Settings.objects.aget()).username_suffix_length or 1
     base = username[:-sl]
     while True:
         new_username = base + ''.join(random.choices(string.digits, k=sl))

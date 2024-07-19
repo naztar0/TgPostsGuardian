@@ -1,11 +1,11 @@
 import logging
 import json
 from io import BytesIO
+from contextlib import suppress
 from datetime import datetime, timedelta, timezone
-from asyncio import sleep, get_event_loop, gather
+from asyncio import sleep, gather
 
 from channels.db import database_sync_to_async
-from preferences import preferences
 
 from telethon import TelegramClient, types, events
 from telethon.types import ChannelParticipantsAdmins, InputPeerChannel, InputChannel, MessageMediaPhoto
@@ -14,10 +14,11 @@ from telethon.tl.types.chatlists import ChatlistInvite
 from telethon.tl.types.channels import ChannelParticipants
 from telethon.tl.functions.channels import GetParticipantsRequest, EditAdminRequest, UpdateUsernameRequest
 from telethon.tl.functions.chatlists import JoinChatlistInviteRequest, CheckChatlistInviteRequest
-from telethon.errors.rpcerrorlist import ChatAdminRequiredError
+from telethon.errors.rpcerrorlist import ChatAdminRequiredError, MessageNotModifiedError
 
 from app.settings import BASE_DIR, API_ID, API_HASH, USERBOT_PN_LIST, USERBOT_HOST_LIST
 from bot import models, utils
+from bot.types import Log, UsernameChangeReason
 from bot.utils_lib.stats import get_stats_with_graphs
 
 
@@ -70,6 +71,9 @@ class App:
                 events.NewMessage(incoming=True, pattern=r'^PUBLISH_POST (?P<data>.+)$')
             )
         self.userbot = await models.UserBot.objects.aget(phone_number=self.phone_number)
+
+        settings = await models.Settings.objects.aget()
+
         if self.host:
             if self.func == 1:
                 await self.refresh()
@@ -77,14 +81,14 @@ class App:
             elif self.func == 2:
                 await self.start_jobs(
                     ('join_channels', 60 * 5),
-                    ('check_post_deletions', preferences.Settings.check_post_deletions_interval),
-                    ('check_lang_stats', preferences.Settings.check_stats_interval),
-                    ('delete_old_posts', preferences.Settings.delete_old_posts_interval * 60)
+                    ('check_post_deletions', settings.check_post_deletions_interval),
+                    ('check_lang_stats', settings.check_stats_interval),
+                    ('delete_old_posts', settings.delete_old_posts_interval * 60)
                 )
         else:
             await self.start_jobs(
                 ('join_channels', 60 * 5),
-                ('check_post_views', preferences.Settings.check_post_views_interval)
+                ('check_post_views', settings.check_post_views_interval)
             )
 
     async def start_jobs(self, *jobs: tuple[str, int]):
@@ -101,7 +105,7 @@ class App:
             if user.phone_number not in USERBOT_HOST_LIST and user.phone_number not in USERBOT_PN_LIST:
                 await user.adelete()
 
-        async for channel in models.Channel.objects.all():
+        async for channel in models.Channel.objects.filter(owner=self.userbot):
             peer = await self.client.get_input_entity(channel.v2_id)
             peer = InputChannel(peer.channel_id, peer.access_hash)
             cp: ChannelParticipants = await self.client(
@@ -115,7 +119,7 @@ class App:
             )
             admins = [admin.user_id for admin in cp.participants]
             async for user in models.UserBot.objects.all():
-                if user.user_id not in admins:
+                if user.phone_number not in USERBOT_HOST_LIST and user.user_id not in admins:
                     privileges = types.TypeChatAdminRights(delete_messages=True, post_messages=True, edit_messages=True, change_info=True)
                     await self.client(EditAdminRequest(channel.v2_id, user.user_id, privileges, ''))
                     logging.info(f'Promoted {user.user_id} to admin in {channel.title}')
@@ -137,34 +141,49 @@ class App:
         })
 
     async def join_channels(self):
-        check: ChatlistInvite = await self.client(CheckChatlistInviteRequest(slug=preferences.Settings.chatlist_invite))
+        settings = await models.Settings.objects.aget()
+        check: ChatlistInvite = await self.client(CheckChatlistInviteRequest(slug=settings.chatlist_invite))
         channels = [channel for channel in check.chats if channel.left]
         if channels:
             await self.client(JoinChatlistInviteRequest(
-                slug=preferences.Settings.chatlist_invite,
+                slug=settings.chatlist_invite,
                 peers=[InputPeerChannel(x.id, x.access_hash) for x in channels],
             ))
             logging.info(f'Joined {len(channels)} channels: {", ".join([channel.title for channel in channels])}')
 
-    async def change_username(self, channel: models.Channel):
+    async def change_username(self, channel: models.Channel, reason):
         for _ in range(3):
-            new_username = utils.rand_username(channel.username)
+            new_username = await utils.rand_username(channel.username)
             logging.info(f'Updating channel {channel.title} username to {new_username}')
             try:
                 await self.client(UpdateUsernameRequest(channel.v2_id, new_username))
                 channel.username = new_username
                 channel.last_username_change = datetime.now(timezone.utc)
                 await channel.asave()
-                await models.Log.objects.acreate(type=models.types.Log.USERNAME_CHANGE, userbot=self.userbot, channel=channel)
+                await models.Log.objects.acreate(
+                    type=Log.USERNAME_CHANGE,
+                    userbot=self.userbot,
+                    channel=channel,
+                    reason=reason
+                )
                 return new_username
             except Exception as e:
-                await models.Log.objects.acreate(type=models.types.Log.USERNAME_CHANGE, userbot=self.userbot, channel=channel, success=False)
+                await models.Log.objects.acreate(
+                    type=Log.USERNAME_CHANGE,
+                    userbot=self.userbot,
+                    channel=channel,
+                    success=False,
+                    reason=reason,
+                    error_message=str(e)[-256:]
+                )
                 logging.error(e)
                 await sleep(5)
 
-    async def get_channels(self):
+    async def get_channels(self, owner=False):
         channels = models.Channel.objects.all()
-        if preferences.Settings.individual_allocations:
+        if owner:
+            channels = channels.filter(owner=self.userbot)
+        if (await models.Settings.objects.aget()).individual_allocations:
             channels_count = await channels.acount()
             userbot_count = await models.UserBot.objects.acount()
             if userbot_count <= channels_count:
@@ -175,10 +194,10 @@ class App:
 
     async def check_post_deletions(self):
         now = datetime.now(timezone.utc)
-        async for channel in models.Channel.objects.all():
+        async for channel in models.Channel.objects.filter(owner=self.userbot):
             await self.refresh_channel(channel)
             daily_deletions_count = await models.Log.objects.filter(
-                channel=channel, type=models.types.Log.DELETION, success=True,
+                channel=channel, type=Log.DELETION, success=True,
                 created__year=now.year, created__month=now.month, created__day=now.day,
             ).acount()
             logging.info(f'Checking channel {channel.title} with {daily_deletions_count} daily deletions')
@@ -186,7 +205,7 @@ class App:
                     channel.deletions_count_for_username_change and
                     await utils.can_change_username(channel, daily_deletions_count, channel.deletions_count_for_username_change)
             ):
-                await self.change_username(channel)
+                await self.change_username(channel, UsernameChangeReason.DELETIONS_LIMIT)
 
     async def delete_old_posts(self):
         now = datetime.now(timezone.utc)
@@ -259,7 +278,7 @@ class App:
             logging.info(f'Found {len(single_messages)} single messages and {len(grouped_messages)} grouped messages')
             for message in single_messages:
                 await models.Log.objects.acreate(
-                    type=models.types.Log.DELETION,
+                    type=Log.DELETION,
                     userbot=self.userbot,
                     channel=channel,
                     post_id=message.id,
@@ -281,7 +300,7 @@ class App:
                 await sleep(1)
             for grouped_message in grouped_messages.values():
                 await models.Log.objects.acreate(
-                    type=models.types.Log.DELETION,
+                    type=Log.DELETION,
                     userbot=self.userbot,
                     channel=channel,
                     post_id=grouped_message[0].id,
@@ -311,12 +330,14 @@ class App:
             max_views //= 24 - datetime.now(timezone.utc).hour
         logging.info(f'Views: {current_views}, max views: {max_views}')
         if current_views > max_views and await utils.can_change_username(channel, current_views, max_views):
-            await self.change_username(channel)
+            await self.change_username(channel, UsernameChangeReason.LANGUAGE_STATS_VIEWS_LIMIT)
             await sleep(30)
             return True
         return False
 
     async def handle_view_diff_limitation(self, channel, language, current_views, max_diff, interval):
+        if current_views == 0:
+            return False
         last_views: models.StatsViews = await models.StatsViews.objects \
             .filter(channel=channel, language=language, created__gte=utils.day_start()) \
             .order_by('-created').afirst()
@@ -327,18 +348,18 @@ class App:
             percent_diff = (current_views - last_views.value) * 100 / last_views.value
             logging.info(f'Percent: {percent_diff}, max percent: {max_diff}')
             if percent_diff > max_diff and await utils.can_change_username(channel, percent_diff, max_diff):
-                await self.change_username(channel)
+                await self.change_username(channel, UsernameChangeReason.LANGUAGE_STATS_VIEWS_DIFFERENCE_LIMIT)
                 await sleep(30)
                 return True
         return False
 
     async def check_lang_stats(self):
-        async for channel in await self.get_channels():
+        async for channel in await self.get_channels(owner=True):
             logging.info(f'Checking channel lang stats {channel.title} ({channel.channel_id})')
             try:
                 stats, graphs = await get_stats_with_graphs(self.client, channel.v2_id, ['languages_graph'])
             except ChatAdminRequiredError:
-                logging.error(f'Cant get stats for {channel.title}')
+                logging.warning(f'Cant get stats for {channel.title}')
                 continue
             async for limitation in models.Limitation.objects.filter(channel=channel).order_by('-created'):
                 if not limitation.lang_stats_restrictions:
@@ -412,17 +433,18 @@ class App:
         channel_id_v1 = abs(int(str(channel_id_v2)[3:]))
 
         channel = await database_sync_to_async(models.Channel.objects.get)(channel_id=channel_id_v1)
-        username = await self.change_username(channel)
+        username = await self.change_username(channel, UsernameChangeReason.THIRD_PARTY_REQUEST)
 
         result = json.dumps({'channel_id': channel_id_v2, 'username': username or channel.username})
         await event.respond(f'/update_username {result}')
 
     async def make_post_message_handler(self, event: Message | events.NewMessage.Event):
         data: dict = json.loads(event.pattern_match['data'])  # {'album_ids': [1, 2, 3], 'text_id': 1, 'bot_user_id': 1}
+        settings = await database_sync_to_async(models.Settings.objects.get)()
 
-        album_messages = await self.client.get_messages(preferences.Settings.archive_channel, ids=data['album_ids']) if data.get('album_ids') else None
-        text_message = await self.client.get_messages(preferences.Settings.archive_channel, ids=data['text_id'])
-        result = await self.client.send_message(preferences.Settings.archive_channel, text_message.message, file=album_messages)
+        album_messages = await self.client.get_messages(settings.archive_channel, ids=data['album_ids']) if data.get('album_ids') else None
+        text_message = await self.client.get_messages(settings.archive_channel, ids=data['text_id'])
+        result = await self.client.send_message(settings.archive_channel, text_message.message, file=album_messages)
 
         if isinstance(result, list):
             result_ids = [x.id for x in result]
@@ -431,7 +453,7 @@ class App:
         if text_message.entities:
             # noinspection PyTypeChecker
             await self.client.edit_message(
-                preferences.Settings.archive_channel,
+                settings.archive_channel,
                 result_ids[0],
                 text_message.message,
                 formatting_entities=text_message.entities
@@ -442,8 +464,9 @@ class App:
 
     async def publish_post_message_handler(self, event: Message | events.NewMessage.Event):
         data: dict = json.loads(event.pattern_match['data'])  # {'message_ids': [1, 2, 3], 'channel_id': 1, 'ad_id': 1}
+        settings = await database_sync_to_async(models.Settings.objects.get)()
 
-        messages = await self.client.get_messages(preferences.Settings.archive_channel, ids=data['message_ids'])
+        messages = await self.client.get_messages(settings.archive_channel, ids=data['message_ids'])
         result = await self.client.send_message(data['channel_id'], messages[0].message, file=messages if messages[0].media else None)
 
         if isinstance(result, list):
@@ -451,19 +474,14 @@ class App:
         else:
             result_ids = [result.id]
         if messages[0].entities:
-            # noinspection PyTypeChecker
-            await self.client.edit_message(
-                data['channel_id'],
-                result_ids[0],
-                messages[0].message,
-                formatting_entities=messages[0].entities
-            )
+            with suppress(MessageNotModifiedError):
+                # noinspection PyTypeChecker
+                await self.client.edit_message(
+                    data['channel_id'],
+                    result_ids[0],
+                    messages[0].message,
+                    formatting_entities=messages[0].entities
+                )
 
         result = json.dumps({'message_ids': result_ids, 'ad_id': data['ad_id']})
         await event.respond(f'/publish_post {result}')
-
-
-def main(number, host=0, func=0):
-    utils.init_logger(number)
-    app = App(number, host, func)
-    get_event_loop().run_until_complete(app.start())
