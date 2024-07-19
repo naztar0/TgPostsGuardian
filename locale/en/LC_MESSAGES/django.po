@@ -1,0 +1,80 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-07-19 11:32+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: .\app\settings.py:159
+msgid "info"
+msgstr "Info"
+
+#: .\app\settings.py:162
+msgid "a_userbots"
+msgstr "👳🏻‍♀ UserBots"
+
+#: .\app\settings.py:166
+msgid "a_logs"
+msgstr "📜 Logs"
+
+#: .\app\settings.py:170
+msgid "a_posts"
+msgstr "📝 Posts"
+
+#: .\app\settings.py:174
+msgid "a_postchecks"
+msgstr "🔍 Post checks"
+
+#: .\app\settings.py:178
+msgid "a_statsviews"
+msgstr "📊 Stats views"
+
+#: .\app\settings.py:185
+msgid "management"
+msgstr "Management"
+
+#: .\app\settings.py:188
+msgid "a_channels"
+msgstr "📢 Channels"
+
+#: .\app\settings.py:192
+msgid "a_limitations"
+msgstr "📝 Limitations"
+
+#: .\app\settings.py:196
+msgid "a_settings"
+msgstr "⚙️ Settings"
+
+#: .\templates\admin\settings_form.html:18
+#: .\templates\admin\text_change_form.html:18
+msgid "Home"
+msgstr ""
+
+#: .\templates\admin\settings_form.html:21
+#: .\templates\admin\text_change_form.html:21
+#, python-format
+msgid "Add %(name)s"
+msgstr ""
+
+#: .\templates\admin\settings_form.html:57
+#: .\templates\admin\text_change_form.html:57
+msgid "Please correct the error below."
+msgstr ""
+
+#: .\templates\admin\settings_form.html:57
+#: .\templates\admin\text_change_form.html:57
+msgid "Please correct the errors below."
+msgstr ""
