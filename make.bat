@@ -3,14 +3,10 @@
 echo Collecting static files
 python manage.py collectstatic --noinput
 
-echo Creating symlinks
-mklink /D %CD%\bot\app %CD%\app
-mklink /D %CD%\bot\templates %CD%\templates
-
 echo Creating translations
-cd bot ^
-    && django-admin makemessages -l en -l ru --symlinks ^
-    && django-admin compilemessages ^
-    && cd ..
+python manage.py makemessages -l en -l ru
+
+echo Compiling translations
+python manage.py compilemessages
 
 echo Done
