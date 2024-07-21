@@ -13,6 +13,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('phone_number', nargs='?', type=str)
         parser.add_argument('--init', action='store_true')
+        parser.add_argument('--code', action='store_true')
         parser.add_argument('--host', nargs='?', type=int)
         parser.add_argument('--func', nargs='?', type=int)
 
@@ -21,10 +22,13 @@ class Command(BaseCommand):
             logging.info('Initializing')
             for i, phone_number in enumerate(USERBOT_HOST_LIST, 1):
                 print(i, phone_number)
-                login.main(phone_number, i)
+                login.initialize(phone_number, i)
             for i, phone_number in enumerate(USERBOT_PN_LIST):
                 print(i, phone_number)
-                login.main(phone_number)
+                login.initialize(phone_number)
+            return
+        if options['code']:
+            login.listen_codes(USERBOT_PN_LIST + USERBOT_HOST_LIST)
             return
         if phone_number := options['phone_number']:
             logging.info(f'Starting {phone_number}')
