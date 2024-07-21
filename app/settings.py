@@ -142,13 +142,10 @@ USE_TZ = True
 
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 STATIC_URL = '/static/'
 
-STATICFILES_DIRS = (os.path.join(BASE_DIR, 'static'),)
-
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-MEDIA_URL = '/media/'
+STATICFILES_DIRS = (os.path.join(BASE_DIR, 'staticfiles'),)
 
 LOCALE_PATHS = (os.path.join(BASE_DIR, 'locale'),)
 
