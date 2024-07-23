@@ -199,7 +199,7 @@ class App:
             daily_deletions_count = await models.Log.objects.filter(
                 channel=channel, type=Log.DELETION, success=True,
                 created__year=now.year, created__month=now.month, created__day=now.day,
-            ).distinct('post_id').acount()
+            ).values('post_id').distinct().acount()
             logging.info(f'Checking channel {channel.title} with {daily_deletions_count} daily deletions')
             if (
                     channel.deletions_count_for_username_change and
