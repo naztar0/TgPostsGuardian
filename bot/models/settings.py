@@ -4,8 +4,6 @@ from solo.models import SingletonModel
 
 
 class Settings(SingletonModel):
-    admins = models.TextField(_('admin_list'), max_length=256, blank=True, null=True)
-    admins.help_text = _('admins_help_text')
     chatlist_invite = models.CharField(_('chatlist_invite'), max_length=16, blank=True, null=True)
     archive_channel = models.BigIntegerField(_('archive_channel_id'), blank=True, null=True)
     username_suffix_length = models.PositiveSmallIntegerField(_('username_suffix_length'), default=2)

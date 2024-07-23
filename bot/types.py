@@ -7,6 +7,12 @@ class Log(helper.HelperMode):
     USERNAME_CHANGE = helper.Item()
 
 
+class Limitation(helper.HelperMode):
+    mode = helper.HelperMode.SCREAMING_SNAKE_CASE
+    POST_VIEWS = helper.Item()
+    LANGUAGE_STATS = helper.Item()
+
+
 class UsernameChangeReason(helper.HelperMode):
     mode = helper.HelperMode.SCREAMING_SNAKE_CASE
     DELETIONS_LIMIT = helper.Item()
