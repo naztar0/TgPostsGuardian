@@ -18,7 +18,7 @@ from telethon.errors.rpcerrorlist import ChatAdminRequiredError, MessageNotModif
 
 from app.settings import BASE_DIR, API_ID, API_HASH, USERBOT_PN_LIST, USERBOT_HOST_LIST
 from bot import models, utils
-from bot.types import Log, UsernameChangeReason
+from bot.types import Log, Limitation, UsernameChangeReason
 from bot.utils_lib.stats import get_stats_with_graphs
 
 
@@ -199,7 +199,7 @@ class App:
             daily_deletions_count = await models.Log.objects.filter(
                 channel=channel, type=Log.DELETION, success=True,
                 created__year=now.year, created__month=now.month, created__day=now.day,
-            ).acount()
+            ).distinct('post_id').acount()
             logging.info(f'Checking channel {channel.title} with {daily_deletions_count} daily deletions')
             if (
                     channel.deletions_count_for_username_change and
@@ -209,7 +209,7 @@ class App:
 
     async def delete_old_posts(self):
         now = datetime.now(timezone.utc)
-        async for channel in models.Channel.objects.all():
+        async for channel in models.Channel.objects.filter(delete_posts_after_days__gt=0):
             logging.info(f'Checking channel {channel.title}')
             messages = []
             async for message in self.client.iter_messages(
@@ -227,7 +227,9 @@ class App:
             logging.info(f'Checking channel {channel.channel_id}')
             single_messages: list[types.Message] = []
             grouped_messages: dict[int, list[types.Message]] = {}
-            limitations = [x async for x in models.Limitation.objects.filter(channel=channel).order_by('-created')]
+            limitations = [x async for x in models.Limitation.objects.filter(
+                channel=channel, type=Limitation.POST_VIEWS
+            ).order_by('-created')]
             async for message in self.client.iter_messages(channel.v2_id):
                 message: types.Message
                 message.date = message.date.replace(tzinfo=timezone.utc)
@@ -243,8 +245,8 @@ class App:
                         for lim in limitations:
                             if (
                                 lim.start <= message.date.date() <= lim.end and lim.priority < limitation.priority and
-                                bool(lim.views_for_deletion) == bool(limitation.views_for_deletion) and
-                                bool(lim.views_difference_for_deletion) == bool(limitation.views_difference_for_deletion)
+                                bool(lim.views) == bool(limitation.views) and
+                                bool(lim.views_difference) == bool(limitation.views_difference)
                             ):
                                 logging.info(f'Skipping limitation {limitation.start} - {limitation.end} with priority {limitation.priority} '
                                              f'because it is inside {lim.start} - {lim.end} with priority {lim.priority}')
@@ -252,19 +254,19 @@ class App:
                                 break
                         if skip:
                             continue
-                        if limitation.views_for_deletion and message.views > limitation.views_for_deletion:
-                            logging.info(f'Found views {message.views} more than limitation {limitation.views_for_deletion}')
+                        if limitation.views and message.views > limitation.views:
+                            logging.info(f'Found views {message.views} more than limitation {limitation.views}')
                             if message.grouped_id and channel.delete_albums:
                                 if message.grouped_id not in grouped_messages:
                                     grouped_messages[message.grouped_id] = await utils.collect_media_group(self.client, message)
                             else:
                                 single_messages.append(message)
-                        if limitation.views_difference_for_deletion:
-                            logging.info(f'Checking views difference {limitation.views_difference_for_deletion}')
+                        if limitation.views_difference:
+                            logging.info(f'Checking views difference {limitation.views_difference}')
                             if post := await models.PostCheck.objects.filter(channel=channel, post_id=message.id).afirst():
-                                if post.last_check < now - timedelta(minutes=limitation.views_difference_for_deletion_interval) \
-                                        and (message.views - post.views) * 100 / post.views > limitation.views_difference_for_deletion:
-                                    logging.info(f'Found views difference {limitation.views_difference_for_deletion}')
+                                if post.last_check < now - timedelta(minutes=limitation.views_difference_interval) \
+                                        and (message.views - post.views) * 100 / post.views > limitation.views_difference:
+                                    logging.info(f'Found views difference {limitation.views_difference}')
                                     if message.grouped_id and channel.delete_albums:
                                         if message.grouped_id not in grouped_messages:
                                             grouped_messages[message.grouped_id] = await utils.collect_media_group(self.client, message)
@@ -361,27 +363,29 @@ class App:
             except ChatAdminRequiredError:
                 logging.warning(f'Cant get stats for {channel.title}')
                 continue
-            async for limitation in models.Limitation.objects.filter(channel=channel).order_by('-created'):
+            async for limitation in models.Limitation.objects.filter(
+                    channel=channel, type=Limitation.LANGUAGE_STATS
+            ).order_by('-created'):
                 if not limitation.lang_stats_restrictions:
                     continue
                 lang_stats = utils.LanguageStats()
                 lang_stats.get_languages_graph_views(graphs, days=1)
                 lang_stats.parse_lang_stats_restrictions(limitation.lang_stats_restrictions)
-                if limitation.views_for_deletion:
+                if limitation.views:
                     if await self.handle_view_limitation(
                             channel,
                             lang_stats.get_total(),
-                            limitation.views_for_deletion,
+                            limitation.views,
                             limitation.hourly_distribution
                     ):
                         continue
-                if limitation.views_difference_for_deletion:
+                if limitation.views_difference:
                     if await self.handle_view_diff_limitation(
                             channel,
                             None,
                             lang_stats.get_total(),
-                            limitation.views_difference_for_deletion,
-                            limitation.views_difference_for_deletion_interval
+                            limitation.views_difference,
+                            limitation.views_difference_interval
                     ):
                         continue
                 if '*' in lang_stats.restrictions:
@@ -400,7 +404,7 @@ class App:
                                 '*',
                                 lang_stats.get_others(),
                                 -max_views,
-                                limitation.views_difference_for_deletion_interval
+                                limitation.views_difference_interval
                         ):
                             continue
                 for lang, views in lang_stats.get_data().items():
@@ -421,13 +425,13 @@ class App:
                                 lang,
                                 views,
                                 -max_views,
-                                limitation.views_difference_for_deletion_interval
+                                limitation.views_difference_interval
                         ):
                             break
             await sleep(3)
 
     async def update_username_message_handler(self, event: Message | events.NewMessage.Event):
-        data = json.loads(event.pattern_match['data'])
+        data: dict = json.loads(event.pattern_match['data'])  # {'channel_id': 1}
 
         channel_id_v2 = data['channel_id']
         channel_id_v1 = abs(int(str(channel_id_v2)[3:]))
@@ -451,13 +455,14 @@ class App:
         else:
             result_ids = [result.id]
         if text_message.entities:
-            # noinspection PyTypeChecker
-            await self.client.edit_message(
-                settings.archive_channel,
-                result_ids[0],
-                text_message.message,
-                formatting_entities=text_message.entities
-            )
+            with suppress(MessageNotModifiedError):
+                # noinspection PyTypeChecker
+                await self.client.edit_message(
+                    settings.archive_channel,
+                    result_ids[0],
+                    text_message.message,
+                    formatting_entities=text_message.entities
+                )
 
         result = json.dumps({'message_ids': result_ids, 'bot_user_id': data['bot_user_id']})
         await event.respond(f'/make_post {result}')

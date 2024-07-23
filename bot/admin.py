@@ -165,18 +165,17 @@ class StatsViewsAdmin(admin.ModelAdmin):
 
 
 class LimitationAdmin(admin.ModelAdmin):
-    list_display = ['created', 'channel_custom', 'views_for_deletion', 'views_difference_for_deletion',
-                    'views_difference_for_deletion_interval', 'lang_stats_restrictions_custom', 'hourly_distribution',
+    list_display = ['created', 'channel_custom', 'type', 'views', 'views_difference', 'lang_stats_restrictions_custom',
                     'start_date', 'end_date', 'start_after_days', 'end_after_days']
     list_per_page = 25
 
     search_fields = ['channel', 'channel__title']
-    list_filter = ['lang_stats_restrictions', 'channel__title']
+    list_filter = ['type', 'channel__title']
 
     fieldsets = [
-        (_('parameters'), {'fields': ['channel', 'views_for_deletion', 'views_difference_for_deletion',
-                                      'views_difference_for_deletion_interval', 'lang_stats_restrictions',
-                                      'hourly_distribution', 'start_date', 'end_date', 'start_after_days', 'end_after_days']}),
+        (_('parameters'), {'fields': ['channel', 'type', 'views', 'views_difference', 'views_difference_interval',
+                                      'lang_stats_restrictions', 'hourly_distribution', 'start_date', 'end_date',
+                                      'start_after_days', 'end_after_days']}),
     ]
 
     def channel_custom(self, obj):
@@ -202,7 +201,7 @@ class LimitationAdmin(admin.ModelAdmin):
 
 class SettingsAdmin(SingletonModelAdmin):
     fieldsets = [
-        (_('parameters'), {'fields': ['admins', 'chatlist_invite', 'archive_channel', 'username_suffix_length',
+        (_('parameters'), {'fields': ['chatlist_invite', 'archive_channel', 'username_suffix_length',
                                       'check_post_views_interval', 'check_post_deletions_interval',
                                       'check_stats_interval', 'delete_old_posts_interval',
                                       'username_change_cooldown', 'individual_allocations']}),

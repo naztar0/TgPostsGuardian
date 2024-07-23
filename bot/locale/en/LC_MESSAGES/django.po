@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-19 12:59+0200\n"
+"POT-Creation-Date: 2024-07-23 09:39+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -23,8 +23,8 @@ msgstr ""
 msgid "@username"
 msgstr "@username"
 
-#: .\bot\admin.py:50 .\bot\admin.py:111 .\bot\admin.py:147 .\bot\admin.py:177
-#: .\bot\admin.py:205
+#: .\bot\admin.py:50 .\bot\admin.py:111 .\bot\admin.py:147 .\bot\admin.py:176
+#: .\bot\admin.py:204
 msgid "parameters"
 msgstr "Parameters"
 
@@ -32,8 +32,8 @@ msgstr "Parameters"
 msgid "userbot"
 msgstr "Userbot"
 
-#: .\bot\admin.py:65 .\bot\admin.py:90 .\bot\admin.py:155 .\bot\admin.py:187
-#: .\bot\models\channel.py:27 .\bot\models\limitation.py:8
+#: .\bot\admin.py:65 .\bot\admin.py:90 .\bot\admin.py:155 .\bot\admin.py:186
+#: .\bot\models\channel.py:27 .\bot\models\limitation.py:11
 #: .\bot\models\log.py:15 .\bot\models\post_check.py:6
 #: .\bot\models\stats_views.py:7
 msgid "channel"
@@ -43,7 +43,7 @@ msgstr "Channel"
 msgid "owner"
 msgstr "Owner"
 
-#: .\bot\admin.py:191 .\bot\models\limitation.py:12
+#: .\bot\admin.py:190 .\bot\models\limitation.py:16
 msgid "lang_stats_restrictions"
 msgstr "Language stats restrictions"
 
@@ -98,24 +98,36 @@ msgstr "Delete all posts after days"
 msgid "channels"
 msgstr "Channels"
 
-#: .\bot\models\limitation.py:7 .\bot\models\log.py:12
+#: .\bot\models\limitation.py:8
+msgid "limitation_post_views"
+msgstr "👁 Post views"
+
+#: .\bot\models\limitation.py:9
+msgid "limitation_language_stats"
+msgstr "🌐 Language statistics"
+
+#: .\bot\models\limitation.py:10 .\bot\models\log.py:12
 #: .\bot\models\stats_views.py:6 .\bot\models\userbot.py:6
 msgid "created_utc"
 msgstr "🕐 Created, UTC"
 
-#: .\bot\models\limitation.py:9
-msgid "views_for_deletion"
-msgstr "Views for deletion"
-
-#: .\bot\models\limitation.py:10
-msgid "views_difference_for_deletion"
-msgstr "Views difference for deletion, %"
-
-#: .\bot\models\limitation.py:11
-msgid "views_difference_for_deletion_interval_minutes"
-msgstr "View difference check interval for deletion, minutes"
+#: .\bot\models\limitation.py:12 .\bot\models\log.py:13
+msgid "type"
+msgstr "Type"
 
 #: .\bot\models\limitation.py:13
+msgid "limitation_views"
+msgstr "Views limit"
+
+#: .\bot\models\limitation.py:14
+msgid "limitation_views_difference"
+msgstr "Views difference limit, %"
+
+#: .\bot\models\limitation.py:15
+msgid "limitation_views_difference_interval_minutes"
+msgstr "View difference check interval, minutes"
+
+#: .\bot\models\limitation.py:17
 msgid "lang_stats_restrictions_help_text"
 msgstr ""
 "List of language names and views count separated by line breaks.<br>Use % "
@@ -123,37 +135,37 @@ msgstr ""
 "defining other languages views count.<br>Example:<br>English "
 "1000<br>Ukrainian 20%<br>Russian 5%<br>* 100"
 
-#: .\bot\models\limitation.py:14
+#: .\bot\models\limitation.py:18
 msgid "hourly_distribution"
 msgstr "Hourly distribution"
 
-#: .\bot\models\limitation.py:15
+#: .\bot\models\limitation.py:19
 msgid "hourly_distribution_help_text"
 msgstr ""
 "Distribute views restrictions hourly. If enabled, restrictions will be "
 "calculated as: (restriction / 24) * current hour"
 
-#: .\bot\models\limitation.py:16
+#: .\bot\models\limitation.py:20
 msgid "start_date_utc"
 msgstr "📆 Start date, UTC"
 
-#: .\bot\models\limitation.py:17
+#: .\bot\models\limitation.py:21
 msgid "end_date_utc"
 msgstr "📆 End date, UTC"
 
-#: .\bot\models\limitation.py:18
+#: .\bot\models\limitation.py:22
 msgid "start_after_days"
 msgstr "Start after days"
 
-#: .\bot\models\limitation.py:19
+#: .\bot\models\limitation.py:23
 msgid "end_after_days"
 msgstr "End after days"
 
-#: .\bot\models\limitation.py:58
+#: .\bot\models\limitation.py:62
 msgid "limitation"
 msgstr "Limitation"
 
-#: .\bot\models\limitation.py:59
+#: .\bot\models\limitation.py:63
 msgid "limitations"
 msgstr "Limitations"
 
@@ -180,10 +192,6 @@ msgstr "📊 Language stats views difference limit"
 #: .\bot\models\log.py:11
 msgid "third_party_request"
 msgstr "🔗 Third party request"
-
-#: .\bot\models\log.py:13
-msgid "type"
-msgstr "Type"
 
 #: .\bot\models\log.py:16
 msgid "post_id"
