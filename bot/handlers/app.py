@@ -10,10 +10,13 @@ from channels.db import database_sync_to_async
 from telethon import TelegramClient, types, events
 from telethon.types import ChannelParticipantsAdmins, InputPeerChannel, InputChannel, MessageMediaPhoto
 from telethon.tl.custom import Message
+from telethon.tl.types import DialogFilterChatlist, InputChatlistDialogFilter
+from telethon.tl.types.messages import DialogFilters
 from telethon.tl.types.chatlists import ChatlistInvite
 from telethon.tl.types.channels import ChannelParticipants
+from telethon.tl.functions.messages import GetDialogFiltersRequest
 from telethon.tl.functions.channels import GetParticipantsRequest, EditAdminRequest, UpdateUsernameRequest
-from telethon.tl.functions.chatlists import JoinChatlistInviteRequest, CheckChatlistInviteRequest
+from telethon.tl.functions.chatlists import JoinChatlistInviteRequest, CheckChatlistInviteRequest, LeaveChatlistRequest
 from telethon.errors.rpcerrorlist import ChatAdminRequiredError, MessageNotModifiedError
 
 from app.settings import BASE_DIR, API_ID, API_HASH, USERBOT_PN_LIST, USERBOT_HOST_LIST
@@ -145,10 +148,17 @@ class App:
         check: ChatlistInvite = await self.client(CheckChatlistInviteRequest(slug=settings.chatlist_invite))
         channels = [channel for channel in check.chats if channel.left]
         if channels:
+            # delete old chatlists
+            filters: DialogFilters = await self.client(GetDialogFiltersRequest())
+            for fil in filters.filters:
+                if isinstance(fil, DialogFilterChatlist):
+                    await self.client(LeaveChatlistRequest(InputChatlistDialogFilter(fil.id), []))
+            # join new chatlist
             await self.client(JoinChatlistInviteRequest(
                 slug=settings.chatlist_invite,
                 peers=[InputPeerChannel(x.id, x.access_hash) for x in channels],
             ))
+            await self.client.get_dialogs()
             logging.info(f'Joined {len(channels)} channels: {", ".join([channel.title for channel in channels])}')
 
     async def change_username(self, channel: models.Channel, reason):
