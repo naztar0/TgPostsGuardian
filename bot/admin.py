@@ -201,7 +201,7 @@ class LimitationAdmin(admin.ModelAdmin):
 
 class SettingsAdmin(SingletonModelAdmin):
     fieldsets = [
-        (_('parameters'), {'fields': ['chatlist_invite', 'archive_channel', 'username_suffix_length',
+        (_('parameters'), {'fields': ['chatlist_invite', 'userbots_chat_invite', 'archive_channel', 'username_suffix_length',
                                       'check_post_views_interval', 'check_post_deletions_interval',
                                       'check_stats_interval', 'delete_old_posts_interval',
                                       'username_change_cooldown', 'individual_allocations']}),

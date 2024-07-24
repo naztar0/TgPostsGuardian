@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-23 09:39+0200\n"
+"POT-Creation-Date: 2024-07-24 22:49+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -242,65 +242,61 @@ msgid "posts"
 msgstr "Posts"
 
 #: .\bot\models\settings.py:7
-msgid "admin_list"
-msgstr "Admin list"
-
-#: .\bot\models\settings.py:8
-msgid "admins_help_text"
-msgstr "List of admin IDs separated by spaces or line breaks"
-
-#: .\bot\models\settings.py:9
 msgid "chatlist_invite"
 msgstr "Chatlist invite"
 
-#: .\bot\models\settings.py:10
+#: .\bot\models\settings.py:8
+msgid "userbots_chat_invite"
+msgstr "Userbots chat invite"
+
+#: .\bot\models\settings.py:9
 msgid "archive_channel_id"
 msgstr "Archive channel ID"
 
-#: .\bot\models\settings.py:11
+#: .\bot\models\settings.py:10
 msgid "username_suffix_length"
 msgstr "Username suffix length"
 
-#: .\bot\models\settings.py:12
+#: .\bot\models\settings.py:11
 msgid "check_post_views_interval_seconds"
 msgstr "Check post views interval, seconds"
 
-#: .\bot\models\settings.py:13
+#: .\bot\models\settings.py:12
 msgid "check_post_deletions_interval_seconds"
 msgstr "Check post deletions interval, seconds"
 
-#: .\bot\models\settings.py:14
+#: .\bot\models\settings.py:13
 msgid "check_stats_interval_seconds"
 msgstr "Check stats interval, seconds"
 
-#: .\bot\models\settings.py:15
+#: .\bot\models\settings.py:14
 msgid "delete_old_posts_interval_minutes"
 msgstr "Delete old posts interval, minutes"
 
-#: .\bot\models\settings.py:16
+#: .\bot\models\settings.py:15
 msgid "username_change_cooldown_minutes"
 msgstr "Username change cooldown, minutes"
 
-#: .\bot\models\settings.py:17
+#: .\bot\models\settings.py:16
 msgid "individual_allocations"
 msgstr "Individual allocations"
 
-#: .\bot\models\settings.py:18
+#: .\bot\models\settings.py:17
 msgid "individual_allocations_help_text"
 msgstr ""
 "Allocate userbots individually for each channel.<br>If the number of "
 "userbots does not match the number of channels, userbots will be allocated "
 "in a circle.<br>If disabled, all userbots will be allocated for all channels."
 
-#: .\bot\models\settings.py:21
+#: .\bot\models\settings.py:20
 msgid "settings"
 msgstr "Settings"
 
-#: .\bot\models\settings.py:24
+#: .\bot\models\settings.py:23
 msgid "list"
 msgstr "List"
 
-#: .\bot\models\settings.py:25
+#: .\bot\models\settings.py:24
 msgid "lists"
 msgstr "Lists"
 

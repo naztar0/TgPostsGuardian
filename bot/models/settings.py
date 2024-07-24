@@ -5,6 +5,7 @@ from solo.models import SingletonModel
 
 class Settings(SingletonModel):
     chatlist_invite = models.CharField(_('chatlist_invite'), max_length=16, blank=True, null=True)
+    userbots_chat_invite = models.CharField(_('userbots_chat_invite'), max_length=16, blank=True, null=True)
     archive_channel = models.BigIntegerField(_('archive_channel_id'), blank=True, null=True)
     username_suffix_length = models.PositiveSmallIntegerField(_('username_suffix_length'), default=2)
     check_post_views_interval = models.PositiveSmallIntegerField(_('check_post_views_interval_seconds'), default=60)
