@@ -27,6 +27,7 @@ def listen_codes(numbers: list[str]):
     for number in numbers:
         for file in os.listdir(f'{BASE_DIR}/sessions'):
             if file.startswith(number):
+                logging.info(f'Initializing session for {number}, file: {file}')
                 clients.append(TelegramClient(f'{BASE_DIR}/sessions/{file}', API_ID, API_HASH))
                 clients[-1].start(lambda: number)
                 break
