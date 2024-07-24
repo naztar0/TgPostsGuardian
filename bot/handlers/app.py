@@ -10,11 +10,11 @@ from channels.db import database_sync_to_async
 from telethon import TelegramClient, types, events
 from telethon.types import ChannelParticipantsAdmins, InputPeerChannel, InputChannel, MessageMediaPhoto
 from telethon.tl.custom import Message
-from telethon.tl.types import DialogFilterChatlist, InputChatlistDialogFilter
+from telethon.tl.types import DialogFilterChatlist, InputChatlistDialogFilter, ChatInviteAlready
 from telethon.tl.types.messages import DialogFilters
 from telethon.tl.types.chatlists import ChatlistInvite
 from telethon.tl.types.channels import ChannelParticipants
-from telethon.tl.functions.messages import GetDialogFiltersRequest
+from telethon.tl.functions.messages import GetDialogFiltersRequest, GetFullChatRequest, ImportChatInviteRequest, CheckChatInviteRequest
 from telethon.tl.functions.channels import GetParticipantsRequest, EditAdminRequest, UpdateUsernameRequest
 from telethon.tl.functions.chatlists import JoinChatlistInviteRequest, CheckChatlistInviteRequest, LeaveChatlistRequest
 from telethon.errors.rpcerrorlist import ChatAdminRequiredError, MessageNotModifiedError
@@ -26,14 +26,14 @@ from bot.utils_lib.stats import get_stats_with_graphs
 
 
 class App:
-    def __init__(self, phone_number: str, host: int, func: int):
+    def __init__(self, phone_number: str, host: int, func: int = 0):
         if host:
             name = f'{phone_number}-host-{host}-func-{func}'
             self.n = USERBOT_HOST_LIST.index(phone_number)
         else:
             name = phone_number
             self.n = USERBOT_PN_LIST.index(phone_number)
-        self.client = TelegramClient(f'{BASE_DIR}/sessions/{name}', API_ID, API_HASH, receive_updates=host == 0)
+        self.client = TelegramClient(f'{BASE_DIR}/sessions/{name}', API_ID, API_HASH, receive_updates=func == 1)
         self.phone_number = phone_number
         self.host = host
         self.userbot: models.UserBot | None = None
@@ -52,6 +52,11 @@ class App:
         self.last_name = me.last_name
         self.user_id = me.id
         logging.info(f'Initialized {self.phone_number} {self.user_id} {self.first_name} {self.last_name}')
+
+        phone = '+' + me.phone
+        if self.phone_number != phone:
+            logging.warning(f'Phone number mismatch: specified {self.phone_number}, actual {phone}')
+            self.phone_number = phone
 
     async def start(self):
         # noinspection PyUnresolvedReferences
@@ -79,7 +84,6 @@ class App:
 
         if self.host:
             if self.func == 1:
-                await self.refresh()
                 await self.client.run_until_disconnected()
             elif self.func == 2:
                 await self.start_jobs(
@@ -108,6 +112,12 @@ class App:
             if user.phone_number not in USERBOT_HOST_LIST and user.phone_number not in USERBOT_PN_LIST:
                 await user.adelete()
 
+        settings = await models.Settings.objects.aget()
+        chat_invite_info: ChatInviteAlready = await self.client(CheckChatInviteRequest(settings.userbots_chat_invite))
+        await self.client(GetFullChatRequest(chat_invite_info.chat.id))
+
+        if not self.userbot:
+            self.userbot = await models.UserBot.objects.aget(phone_number=self.phone_number)
         async for channel in models.Channel.objects.filter(owner=self.userbot):
             peer = await self.client.get_input_entity(channel.v2_id)
             peer = InputChannel(peer.channel_id, peer.access_hash)
@@ -145,6 +155,9 @@ class App:
 
     async def join_channels(self):
         settings = await models.Settings.objects.aget()
+        chat_invite_info = await self.client(CheckChatInviteRequest(settings.userbots_chat_invite))
+        if not isinstance(chat_invite_info, ChatInviteAlready):
+            await self.client(ImportChatInviteRequest(settings.userbots_chat_invite))
         check: ChatlistInvite = await self.client(CheckChatlistInviteRequest(slug=settings.chatlist_invite))
         channels = [channel for channel in check.chats if channel.left]
         if channels:

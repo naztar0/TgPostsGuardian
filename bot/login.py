@@ -6,17 +6,24 @@ import os
 
 from telethon import TelegramClient, events
 
-from app.settings import BASE_DIR, API_ID, API_HASH, HOST_FUNC_COUNT
+from app.settings import BASE_DIR, API_ID, API_HASH, HOST_FUNC_COUNT, USERBOT_HOST_LIST
+from bot.handlers.app import App
 
 
 def initialize(number, host: int = 0):
+    loop = asyncio.get_event_loop()
     if host:
         for i in range(1, HOST_FUNC_COUNT + 1):
-            client = TelegramClient(f'{BASE_DIR}/sessions/{number}-host-{host}-func-{i}', API_ID, API_HASH, receive_updates=False)
-            client.start(lambda: number)
+            app = App(number, host, i)
+            app.client.start(lambda: number)
+            if i == 1:
+                loop.run_until_complete(app.join_channels())
+                if host == len(USERBOT_HOST_LIST):
+                    loop.run_until_complete(app.refresh())
     else:
-        client = TelegramClient(f'{BASE_DIR}/sessions/{number}', API_ID, API_HASH, receive_updates=False)
-        client.start(lambda: number)
+        app = App(number, host)
+        app.client.start(lambda: number)
+        loop.run_until_complete(app.join_channels())
 
 
 def listen_codes(numbers: list[str]):
