@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-23 09:39+0200\n"
+"POT-Creation-Date: 2024-07-24 23:29+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -20,34 +20,39 @@ msgstr ""
 "%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n"
 "%100>=11 && n%100<=14)? 2 : 3);\n"
 
-#: .\bot\admin.py:29 .\bot\admin.py:120 .\bot\models\channel.py:8
-#: .\bot\models\userbot.py:8
-msgid "@username"
-msgstr "@юзернейм"
+#: .\bot\admin\__init__.py:15
+msgid "admin_panel"
+msgstr "TgPostsGuardian"
 
-#: .\bot\admin.py:50 .\bot\admin.py:111 .\bot\admin.py:147 .\bot\admin.py:176
-#: .\bot\admin.py:204
+#: .\bot\admin\channel.py:15 .\bot\admin\limitation.py:15 .\bot\admin\log.py:15
+#: .\bot\admin\settings.py:7 .\bot\admin\stats_views.py:14
 msgid "parameters"
 msgstr "Параметры"
 
-#: .\bot\admin.py:58 .\bot\models\userbot.py:19
-msgid "userbot"
-msgstr "Юзербот"
+#: .\bot\admin\channel.py:24 .\bot\admin\userbot.py:18
+#: .\bot\models\channel.py:8 .\bot\models\userbot.py:8
+msgid "@username"
+msgstr "@юзернейм"
 
-#: .\bot\admin.py:65 .\bot\admin.py:90 .\bot\admin.py:155 .\bot\admin.py:186
+#: .\bot\admin\channel.py:31 .\bot\models\channel.py:9
+msgid "owner"
+msgstr "Владелец"
+
+#: .\bot\admin\limitation.py:25 .\bot\admin\log.py:30
+#: .\bot\admin\post_check.py:19 .\bot\admin\stats_views.py:22
 #: .\bot\models\channel.py:27 .\bot\models\limitation.py:11
 #: .\bot\models\log.py:15 .\bot\models\post_check.py:6
 #: .\bot\models\stats_views.py:7
 msgid "channel"
 msgstr "Канал"
 
-#: .\bot\admin.py:127 .\bot\models\channel.py:9
-msgid "owner"
-msgstr "Владелец"
-
-#: .\bot\admin.py:190 .\bot\models\limitation.py:16
+#: .\bot\admin\limitation.py:29 .\bot\models\limitation.py:16
 msgid "lang_stats_restrictions"
 msgstr "Ограничения по языковой статистике"
+
+#: .\bot\admin\log.py:23 .\bot\models\userbot.py:19
+msgid "userbot"
+msgstr "Юзербот"
 
 #: .\bot\apps.py:7
 msgid "bot"
@@ -244,65 +249,61 @@ msgid "posts"
 msgstr "Посты"
 
 #: .\bot\models\settings.py:7
-msgid "admin_list"
-msgstr "Список администраторов"
-
-#: .\bot\models\settings.py:8
-msgid "admins_help_text"
-msgstr "Список ID администраторов, разделенных пробелами или переносами строк"
-
-#: .\bot\models\settings.py:9
 msgid "chatlist_invite"
 msgstr "Приглашение в папку чатов"
 
-#: .\bot\models\settings.py:10
+#: .\bot\models\settings.py:8
+msgid "userbots_chat_invite"
+msgstr "Приглашение в чат юзерботов"
+
+#: .\bot\models\settings.py:9
 msgid "archive_channel_id"
 msgstr "ID архивного канала"
 
-#: .\bot\models\settings.py:11
+#: .\bot\models\settings.py:10
 msgid "username_suffix_length"
 msgstr "Длина суффикса юзернейма"
 
-#: .\bot\models\settings.py:12
+#: .\bot\models\settings.py:11
 msgid "check_post_views_interval_seconds"
 msgstr "Интервал проверки просмотров постов, секунд"
 
-#: .\bot\models\settings.py:13
+#: .\bot\models\settings.py:12
 msgid "check_post_deletions_interval_seconds"
 msgstr "Интервал проверки удалений постов, секунд"
 
-#: .\bot\models\settings.py:14
+#: .\bot\models\settings.py:13
 msgid "check_stats_interval_seconds"
 msgstr "Интервал проверки статистики, секунд"
 
-#: .\bot\models\settings.py:15
+#: .\bot\models\settings.py:14
 msgid "delete_old_posts_interval_minutes"
 msgstr "Интервал удаления старых постов, минут"
 
-#: .\bot\models\settings.py:16
+#: .\bot\models\settings.py:15
 msgid "username_change_cooldown_minutes"
 msgstr "Интервал смены юзернеймов, минут"
 
-#: .\bot\models\settings.py:17
+#: .\bot\models\settings.py:16
 msgid "individual_allocations"
 msgstr "Индивидуальные выделения"
 
-#: .\bot\models\settings.py:18
+#: .\bot\models\settings.py:17
 msgid "individual_allocations_help_text"
 msgstr ""
 "Выделять юзерботов индивидуально для каждого канала.<br>Если количество "
 "юзерботов не совпадает с количеством каналов, юзерботы будут выделены по "
 "кругу.<br>Если выключено, все юзерботы будут выделены для всех каналов."
 
-#: .\bot\models\settings.py:21
+#: .\bot\models\settings.py:20
 msgid "settings"
 msgstr "Настройки"
 
-#: .\bot\models\settings.py:24
+#: .\bot\models\settings.py:23
 msgid "list"
 msgstr "Список"
 
-#: .\bot\models\settings.py:25
+#: .\bot\models\settings.py:24
 msgid "lists"
 msgstr "Списки"
 
