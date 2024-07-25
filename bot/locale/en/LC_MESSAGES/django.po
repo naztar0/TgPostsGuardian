@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-24 22:49+0200\n"
+"POT-Creation-Date: 2024-07-24 23:29+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,34 +18,39 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: .\bot\admin.py:29 .\bot\admin.py:120 .\bot\models\channel.py:8
-#: .\bot\models\userbot.py:8
-msgid "@username"
-msgstr "@username"
+#: .\bot\admin\__init__.py:15
+msgid "admin_panel"
+msgstr "TgPostsGuardian"
 
-#: .\bot\admin.py:50 .\bot\admin.py:111 .\bot\admin.py:147 .\bot\admin.py:176
-#: .\bot\admin.py:204
+#: .\bot\admin\channel.py:15 .\bot\admin\limitation.py:15 .\bot\admin\log.py:15
+#: .\bot\admin\settings.py:7 .\bot\admin\stats_views.py:14
 msgid "parameters"
 msgstr "Parameters"
 
-#: .\bot\admin.py:58 .\bot\models\userbot.py:19
-msgid "userbot"
-msgstr "Userbot"
+#: .\bot\admin\channel.py:24 .\bot\admin\userbot.py:18
+#: .\bot\models\channel.py:8 .\bot\models\userbot.py:8
+msgid "@username"
+msgstr "@username"
 
-#: .\bot\admin.py:65 .\bot\admin.py:90 .\bot\admin.py:155 .\bot\admin.py:186
+#: .\bot\admin\channel.py:31 .\bot\models\channel.py:9
+msgid "owner"
+msgstr "Owner"
+
+#: .\bot\admin\limitation.py:25 .\bot\admin\log.py:30
+#: .\bot\admin\post_check.py:19 .\bot\admin\stats_views.py:22
 #: .\bot\models\channel.py:27 .\bot\models\limitation.py:11
 #: .\bot\models\log.py:15 .\bot\models\post_check.py:6
 #: .\bot\models\stats_views.py:7
 msgid "channel"
 msgstr "Channel"
 
-#: .\bot\admin.py:127 .\bot\models\channel.py:9
-msgid "owner"
-msgstr "Owner"
-
-#: .\bot\admin.py:190 .\bot\models\limitation.py:16
+#: .\bot\admin\limitation.py:29 .\bot\models\limitation.py:16
 msgid "lang_stats_restrictions"
 msgstr "Language stats restrictions"
+
+#: .\bot\admin\log.py:23 .\bot\models\userbot.py:19
+msgid "userbot"
+msgstr "Userbot"
 
 #: .\bot\apps.py:7
 msgid "bot"
