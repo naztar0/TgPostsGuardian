@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-24 23:29+0200\n"
+"POT-Creation-Date: 2024-07-28 21:42+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -222,11 +222,15 @@ msgstr "Error message"
 msgid "success"
 msgstr "Success"
 
-#: .\bot\models\log.py:28
+#: .\bot\models\log.py:22
+msgid "dummy"
+msgstr "Dummy"
+
+#: .\bot\models\log.py:29
 msgid "log"
 msgstr "Log"
 
-#: .\bot\models\log.py:29
+#: .\bot\models\log.py:30
 msgid "logs"
 msgstr "Logs"
 
