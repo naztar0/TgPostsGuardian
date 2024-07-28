@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-21 11:21+0200\n"
+"POT-Creation-Date: 2024-07-25 10:53+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -57,24 +57,3 @@ msgstr "📝 Limitations"
 #: .\app\settings.py:193
 msgid "a_settings"
 msgstr "⚙️ Settings"
-
-#: .\templates\admin\settings_form.html:18
-#: .\templates\admin\text_change_form.html:18
-msgid "Home"
-msgstr ""
-
-#: .\templates\admin\settings_form.html:21
-#: .\templates\admin\text_change_form.html:21
-#, python-format
-msgid "Add %(name)s"
-msgstr ""
-
-#: .\templates\admin\settings_form.html:57
-#: .\templates\admin\text_change_form.html:57
-msgid "Please correct the error below."
-msgstr ""
-
-#: .\templates\admin\settings_form.html:57
-#: .\templates\admin\text_change_form.html:57
-msgid "Please correct the errors below."
-msgstr ""
