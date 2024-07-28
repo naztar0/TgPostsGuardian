@@ -5,6 +5,7 @@ from contextlib import suppress
 from datetime import datetime, timedelta, timezone
 from asyncio import sleep, gather
 
+from django.db.models import Q
 from channels.db import database_sync_to_async
 
 from telethon import TelegramClient, types, events
@@ -202,6 +203,22 @@ class App:
                 logging.error(e)
                 await sleep(5)
 
+    async def change_username_safe(self, channel: models.Channel, reason, events_count: int, events_limit: int):
+        exceeded, unlocked = await utils.can_change_username(channel, events_count, events_limit)
+        if exceeded:
+            if unlocked:
+                return await self.change_username(channel, reason)
+            else:
+                logging.info(f'Username change for {channel.title} is locked, creating dummy log')
+                await models.Log.objects.acreate(
+                    type=Log.USERNAME_CHANGE,
+                    userbot=self.userbot,
+                    channel=channel,
+                    reason=reason,
+                    dummy=True
+                )
+        return None
+
     async def get_channels(self, owner=False):
         channels = models.Channel.objects.all()
         if owner:
@@ -224,11 +241,9 @@ class App:
                 created__year=now.year, created__month=now.month, created__day=now.day,
             ).values('post_id').distinct().acount()
             logging.info(f'Checking channel {channel.title} with {daily_deletions_count} daily deletions')
-            if (
-                    channel.deletions_count_for_username_change and
-                    await utils.can_change_username(channel, daily_deletions_count, channel.deletions_count_for_username_change)
-            ):
-                await self.change_username(channel, UsernameChangeReason.DELETIONS_LIMIT)
+            if channel.deletions_count_for_username_change:
+                await self.change_username_safe(channel, UsernameChangeReason.DELETIONS_LIMIT,
+                                                daily_deletions_count, channel.deletions_count_for_username_change)
 
     async def delete_old_posts(self):
         now = datetime.now(timezone.utc)
@@ -354,8 +369,9 @@ class App:
         if hourly_distribution:
             max_views //= 24 - datetime.now(timezone.utc).hour
         logging.info(f'Views: {current_views}, max views: {max_views}')
-        if current_views > max_views and await utils.can_change_username(channel, current_views, max_views):
-            await self.change_username(channel, UsernameChangeReason.LANGUAGE_STATS_VIEWS_LIMIT)
+        if current_views > max_views:
+            await self.change_username_safe(channel, UsernameChangeReason.LANGUAGE_STATS_VIEWS_LIMIT,
+                                            current_views, max_views)
             await sleep(30)
             return True
         return False
@@ -372,13 +388,15 @@ class App:
         if last_views.created < datetime.now(timezone.utc) - timedelta(minutes=interval):
             percent_diff = (current_views - last_views.value) * 100 / last_views.value
             logging.info(f'Percent: {percent_diff}, max percent: {max_diff}')
-            if percent_diff > max_diff and await utils.can_change_username(channel, percent_diff, max_diff):
-                await self.change_username(channel, UsernameChangeReason.LANGUAGE_STATS_VIEWS_DIFFERENCE_LIMIT)
+            if percent_diff > max_diff:
+                await self.change_username_safe(channel, UsernameChangeReason.LANGUAGE_STATS_VIEWS_DIFFERENCE_LIMIT,
+                                                percent_diff, max_diff)
                 await sleep(30)
                 return True
         return False
 
     async def check_lang_stats(self):
+        today = datetime.now(timezone.utc).date()
         async for channel in await self.get_channels(owner=True):
             logging.info(f'Checking channel lang stats {channel.title} ({channel.channel_id})')
             try:
@@ -387,10 +405,10 @@ class App:
                 logging.warning(f'Cant get stats for {channel.title}')
                 continue
             async for limitation in models.Limitation.objects.filter(
-                    channel=channel, type=Limitation.LANGUAGE_STATS
+                Q(channel=channel) & Q(type=Limitation.LANGUAGE_STATS) &
+                (Q(start_date__lte=today) | Q(start_date=None)) &
+                (Q(end_date__gte=today) | Q(end_date=None))
             ).order_by('-created'):
-                if not limitation.lang_stats_restrictions:
-                    continue
                 lang_stats = utils.LanguageStats()
                 lang_stats.get_languages_graph_views(graphs, days=1)
                 lang_stats.parse_lang_stats_restrictions(limitation.lang_stats_restrictions)

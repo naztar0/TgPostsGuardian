@@ -61,11 +61,10 @@ async def can_change_username(channel: models.Channel, events_count: int, events
         created__year=now.year, created__month=now.month, created__day=now.day,
     ).acount()
     settings = await models.Settings.objects.aget()
-    return (
-            events_count >= events_limit * (daily_username_changes_count + 1) and
-            (channel.last_username_change is None or
-             channel.last_username_change < now - timedelta(minutes=settings.username_change_cooldown))
-    )
+    exceeded = events_count >= events_limit * (daily_username_changes_count + 1)
+    unlocked = (channel.last_username_change is None or
+                channel.last_username_change < now - timedelta(minutes=settings.username_change_cooldown))
+    return exceeded, unlocked
 
 
 class LanguageStats:
