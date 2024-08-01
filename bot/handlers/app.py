@@ -175,7 +175,7 @@ class App:
             await self.client.get_dialogs()
             logging.info(f'Joined {len(channels)} channels: {", ".join([channel.title for channel in channels])}')
 
-    async def change_username(self, channel: models.Channel, reason, comment):
+    async def change_username(self, channel: models.Channel, reason, comment, ignore_wait=False):
         for _ in range(3):
             new_username = await utils.rand_username(channel.username)
             logging.info(f'Updating channel {channel.title} username to {new_username}')
@@ -206,10 +206,12 @@ class App:
                     comment=comment,
                     error_message=str(e)[-256:]
                 )
-                await sleep(min(e.seconds, MAX_SLEEP_TIME))
+                if not ignore_wait:
+                    await sleep(min(e.seconds, MAX_SLEEP_TIME))
             except Exception as e:
                 logging.critical(e)
-                await sleep(60)
+                if not ignore_wait:
+                    await sleep(60)
 
     async def change_username_by_limit(self, channel: models.Channel, reason, comment, events_count: int, events_limit: int):
         now = datetime.now(timezone.utc)
@@ -503,7 +505,7 @@ class App:
 
         comment = f'Request from {event.sender_id}'
         channel = await database_sync_to_async(models.Channel.objects.get)(channel_id=channel_id_v1)
-        username = await self.change_username(channel, UsernameChangeReason.THIRD_PARTY_REQUEST, comment)
+        username = await self.change_username(channel, UsernameChangeReason.THIRD_PARTY_REQUEST, comment, ignore_wait=True)
 
         result = json.dumps({'channel_id': channel_id_v2, 'username': username or channel.username})
         await event.respond(f'/update_username {result}')
