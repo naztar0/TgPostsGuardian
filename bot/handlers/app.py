@@ -205,7 +205,7 @@ class App:
                 logging.error(e)
                 await sleep(5)
 
-    async def change_username_safe(self, channel: models.Channel, reason, comment, events_count: int, events_limit: int):
+    async def change_username_by_limit(self, channel: models.Channel, reason, comment, events_count: int, events_limit: int):
         now = datetime.now(timezone.utc)
         settings = await models.Settings.objects.aget()
         unlocked = (channel.last_username_change is None or
@@ -258,8 +258,8 @@ class App:
             logging.info(f'Checking channel {channel.title} with {daily_deletions_count} daily deletions')
             if channel.deletions_count_for_username_change:
                 comment = f'Daily deletions {daily_deletions_count} > limit {channel.deletions_count_for_username_change}'
-                await self.change_username_safe(channel, UsernameChangeReason.DELETIONS_LIMIT, comment,
-                                                daily_deletions_count, channel.deletions_count_for_username_change)
+                await self.change_username_by_limit(channel, UsernameChangeReason.DELETIONS_LIMIT, comment,
+                                                    daily_deletions_count, channel.deletions_count_for_username_change)
 
     async def delete_old_posts(self):
         now = datetime.now(timezone.utc)
@@ -387,8 +387,8 @@ class App:
         logging.info(f'Views: {current_views}, max views: {max_views}')
         if current_views > max_views:
             comment = f'Views {current_views} > limit {max_views}'
-            await self.change_username_safe(channel, UsernameChangeReason.LANGUAGE_STATS_VIEWS_LIMIT, comment,
-                                            current_views, max_views)
+            await self.change_username_by_limit(channel, UsernameChangeReason.LANGUAGE_STATS_VIEWS_LIMIT, comment,
+                                                current_views, max_views)
             await sleep(30)
             return True
         return False
@@ -407,8 +407,8 @@ class App:
             logging.info(f'Percent: {percent_diff}, max percent: {max_diff}')
             if percent_diff > max_diff:
                 comment = f'Views difference for {language} {percent_diff}% ({last_views.value}|{current_views}) > limit {max_diff}%'
-                await self.change_username_safe(channel, UsernameChangeReason.LANGUAGE_STATS_VIEWS_DIFFERENCE_LIMIT,
-                                                comment, percent_diff, max_diff)
+                await self.change_username_by_limit(channel, UsernameChangeReason.LANGUAGE_STATS_VIEWS_DIFFERENCE_LIMIT,
+                                                    comment, percent_diff, max_diff)
                 await sleep(30)
                 return True
         return False
