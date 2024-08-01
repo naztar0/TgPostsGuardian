@@ -213,14 +213,15 @@ class App:
         if not unlocked:
             return
         daily_username_changes_count = await models.Log.objects.filter(
-            channel=channel, type=Log.USERNAME_CHANGE, success=True,
-            created__year=now.year, created__month=now.month, created__day=now.day,
+            channel=channel, type=Log.USERNAME_CHANGE, success=True, created__gte=utils.day_start()
         ).acount()
         excess = await models.Excess.objects.filter(
             channel=channel, type=Log.USERNAME_CHANGE, created__gte=utils.day_start()
         ).order_by('-created').afirst()
-        daily_exceeded = excess.value if excess else 0
-        total_exceeded = (events_count - (events_limit * (daily_username_changes_count + daily_exceeded))) // events_limit
+        daily_exceeded = ((excess.value if excess else 0) + daily_username_changes_count) * events_limit
+        if daily_exceeded >= events_count:
+            return
+        total_exceeded = (events_count - daily_exceeded) // events_limit
         logging.info(f'Daily username changes {daily_username_changes_count}, daily exceeded {daily_exceeded}, total exceeded {total_exceeded}')
         if total_exceeded == 0:
             return
