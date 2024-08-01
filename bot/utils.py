@@ -54,19 +54,6 @@ def get_media_file_id(message: types.Message):
     return media.file_id
 
 
-async def can_change_username(channel: models.Channel, events_count: int, events_limit: int):
-    now = datetime.now(timezone.utc)
-    daily_username_changes_count = await models.Log.objects.filter(
-        channel=channel, type=Log.USERNAME_CHANGE, success=True,
-        created__year=now.year, created__month=now.month, created__day=now.day,
-    ).acount()
-    settings = await models.Settings.objects.aget()
-    exceeded = events_count >= events_limit * (daily_username_changes_count + 1)
-    unlocked = (channel.last_username_change is None or
-                channel.last_username_change < now - timedelta(minutes=settings.username_change_cooldown))
-    return exceeded, unlocked
-
-
 class LanguageStats:
     def __init__(self):
         self.today = datetime.now(timezone.utc).date()
