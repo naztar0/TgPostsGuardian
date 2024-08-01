@@ -8,6 +8,7 @@ class PostCheckAdmin(admin.ModelAdmin):
     list_display_links = None
     list_per_page = 25
 
+    date_hierarchy = 'post_date'
     search_fields = ['post_id', 'channel__title']
     list_filter = ['channel__title']
 

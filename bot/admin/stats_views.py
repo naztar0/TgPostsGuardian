@@ -7,6 +7,7 @@ class StatsViewsAdmin(admin.ModelAdmin):
     list_display = ['created', 'channel_custom', 'language', 'value']
     list_per_page = 25
 
+    date_hierarchy = 'created'
     search_fields = ['channel__title']
     list_filter = ['channel__title']
 
