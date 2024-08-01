@@ -6,8 +6,8 @@ from asyncio import sleep
 from datetime import datetime, timedelta, timezone, date as date_t
 from telethon import TelegramClient, types
 from telethon.errors import FloodWaitError
+from app.settings import MAX_SLEEP_TIME
 from bot import models
-from bot.types import Log
 
 
 async def loop_wrapper(func, sleep_time, *args, **kwargs):
@@ -17,7 +17,7 @@ async def loop_wrapper(func, sleep_time, *args, **kwargs):
             await sleep(random.randint(sleep_time, sleep_time + 16))
         except FloodWaitError as e:
             logging.warning(f'Flood wait {e.seconds} seconds')
-            await sleep(e.seconds)
+            await sleep(min(e.seconds, MAX_SLEEP_TIME))
         except (ValueError, ConnectionError, BufferError) as e:
             logging.error(e)
             await sleep(60)

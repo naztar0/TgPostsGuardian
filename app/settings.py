@@ -41,6 +41,7 @@ USERBOT_PN_LIST = env.list('USERBOT_PN_LIST', default=[])
 USERBOT_HOST_LIST = env.list('USERBOT_HOST_LIST', default=[])
 
 HOST_FUNC_COUNT = 2
+MAX_SLEEP_TIME = 600
 
 
 # Application definition
