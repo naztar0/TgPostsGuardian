@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-25 10:53+0200\n"
+"POT-Creation-Date: 2024-08-01 03:35+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -42,18 +42,22 @@ msgstr "🔍 Post checks"
 msgid "a_statsviews"
 msgstr "📊 Stats views"
 
-#: .\app\settings.py:182
+#: .\app\settings.py:179
+msgid "a_excesses"
+msgstr "🌡 Excesses"
+
+#: .\app\settings.py:186
 msgid "management"
 msgstr "Management"
 
-#: .\app\settings.py:185
+#: .\app\settings.py:189
 msgid "a_channels"
 msgstr "📢 Channels"
 
-#: .\app\settings.py:189
+#: .\app\settings.py:193
 msgid "a_limitations"
 msgstr "📝 Limitations"
 
-#: .\app\settings.py:193
+#: .\app\settings.py:197
 msgid "a_settings"
 msgstr "⚙️ Settings"

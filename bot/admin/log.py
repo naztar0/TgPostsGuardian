@@ -4,16 +4,16 @@ from django.utils.translation import gettext_lazy as _
 
 
 class LogAdmin(admin.ModelAdmin):
-    list_display = ['created', 'user_custom', 'type', 'channel_custom', 'post_date', 'post_views', 'success', 'reason', 'dummy']
+    list_display = ['created', 'user_custom', 'type', 'channel_custom', 'post_date', 'post_views', 'success', 'reason']
     list_per_page = 25
 
     date_hierarchy = 'created'
     search_fields = ['userbot__first_name', 'userbot__last_name', 'channel__channel_title']
-    list_filter = ['type', 'success', 'dummy', 'channel__title', 'reason']
+    list_filter = ['type', 'success', 'channel__title', 'reason']
 
     fieldsets = [
-        (_('parameters'), {'fields': ['userbot', 'type', 'channel', 'post_id', 'post_date',
-                                      'post_views', 'reason', 'success', 'dummy', 'error_message']}),
+        (_('parameters'), {'fields': ['userbot', 'type', 'channel', 'post_id', 'post_date', 'post_views', 'reason',
+                                      'success', 'comment', 'error_message']}),
     ]
 
     def user_custom(self, obj):

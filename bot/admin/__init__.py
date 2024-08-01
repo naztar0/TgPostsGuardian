@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 
 from bot import models
 from .channel import ChannelAdmin
+from .excess import ExcessAdmin
 from .limitation import LimitationAdmin
 from .log import LogAdmin
 from .post_check import PostCheckAdmin
@@ -21,6 +22,7 @@ admin.site.enable_nav_sidebar = False
 
 
 admin.site.register(models.Channel, ChannelAdmin)
+admin.site.register(models.Excess, ExcessAdmin)
 admin.site.register(models.Limitation, LimitationAdmin)
 admin.site.register(models.Log, LogAdmin)
 admin.site.register(models.PostCheck, PostCheckAdmin)

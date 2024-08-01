@@ -175,6 +175,10 @@ ADMIN_REORDER = [
                 'label': _('a_statsviews'),
                 'model': 'bot.StatsViews'
             },
+            {
+                'label': _('a_excesses'),
+                'model': 'bot.Excess'
+            },
         ]
     },
     {

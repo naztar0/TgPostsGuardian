@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-28 21:42+0200\n"
+"POT-Creation-Date: 2024-08-01 03:32+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,12 +18,13 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: .\bot\admin\__init__.py:15
+#: .\bot\admin\__init__.py:16
 msgid "admin_panel"
 msgstr "TgPostsGuardian"
 
-#: .\bot\admin\channel.py:15 .\bot\admin\limitation.py:15 .\bot\admin\log.py:15
-#: .\bot\admin\settings.py:7 .\bot\admin\stats_views.py:14
+#: .\bot\admin\channel.py:15 .\bot\admin\excess.py:14
+#: .\bot\admin\limitation.py:15 .\bot\admin\log.py:15 .\bot\admin\settings.py:7
+#: .\bot\admin\stats_views.py:14
 msgid "parameters"
 msgstr "Parameters"
 
@@ -36,11 +37,11 @@ msgstr "@username"
 msgid "owner"
 msgstr "Owner"
 
-#: .\bot\admin\limitation.py:25 .\bot\admin\log.py:30
+#: .\bot\admin\excess.py:22 .\bot\admin\limitation.py:25 .\bot\admin\log.py:31
 #: .\bot\admin\post_check.py:19 .\bot\admin\stats_views.py:22
-#: .\bot\models\channel.py:27 .\bot\models\limitation.py:11
-#: .\bot\models\log.py:15 .\bot\models\post_check.py:6
-#: .\bot\models\stats_views.py:7
+#: .\bot\models\channel.py:27 .\bot\models\excess.py:9
+#: .\bot\models\limitation.py:11 .\bot\models\log.py:15
+#: .\bot\models\post_check.py:6 .\bot\models\stats_views.py:7
 msgid "channel"
 msgstr "Channel"
 
@@ -48,7 +49,7 @@ msgstr "Channel"
 msgid "lang_stats_restrictions"
 msgstr "Language stats restrictions"
 
-#: .\bot\admin\log.py:23 .\bot\models\userbot.py:19
+#: .\bot\admin\log.py:24 .\bot\models\userbot.py:19
 msgid "userbot"
 msgstr "Userbot"
 
@@ -103,6 +104,37 @@ msgstr "Delete all posts after days"
 msgid "channels"
 msgstr "Channels"
 
+#: .\bot\models\excess.py:7 .\bot\models\log.py:7
+msgid "deletion"
+msgstr "🗑️ Deletion"
+
+#: .\bot\models\excess.py:7 .\bot\models\log.py:7
+msgid "username_change"
+msgstr "👤 Username change"
+
+#: .\bot\models\excess.py:8 .\bot\models\limitation.py:10
+#: .\bot\models\log.py:12 .\bot\models\stats_views.py:6
+#: .\bot\models\userbot.py:6
+msgid "created_utc"
+msgstr "🕐 Created, UTC"
+
+#: .\bot\models\excess.py:10 .\bot\models\limitation.py:12
+#: .\bot\models\log.py:13
+msgid "type"
+msgstr "Type"
+
+#: .\bot\models\excess.py:11 .\bot\models\stats_views.py:9
+msgid "value"
+msgstr "Value"
+
+#: .\bot\models\excess.py:18
+msgid "excess"
+msgstr "Excess"
+
+#: .\bot\models\excess.py:19
+msgid "excesses"
+msgstr "Excesses"
+
 #: .\bot\models\limitation.py:8
 msgid "limitation_post_views"
 msgstr "👁 Post views"
@@ -110,15 +142,6 @@ msgstr "👁 Post views"
 #: .\bot\models\limitation.py:9
 msgid "limitation_language_stats"
 msgstr "🌐 Language statistics"
-
-#: .\bot\models\limitation.py:10 .\bot\models\log.py:12
-#: .\bot\models\stats_views.py:6 .\bot\models\userbot.py:6
-msgid "created_utc"
-msgstr "🕐 Created, UTC"
-
-#: .\bot\models\limitation.py:12 .\bot\models\log.py:13
-msgid "type"
-msgstr "Type"
 
 #: .\bot\models\limitation.py:13
 msgid "limitation_views"
@@ -174,14 +197,6 @@ msgstr "Limitation"
 msgid "limitations"
 msgstr "Limitations"
 
-#: .\bot\models\log.py:7
-msgid "deletion"
-msgstr "🗑️ Deletion"
-
-#: .\bot\models\log.py:7
-msgid "username_change"
-msgstr "👤 Username change"
-
 #: .\bot\models\log.py:8
 msgid "deletions_limit"
 msgstr "🗑️ Deletions limit"
@@ -215,16 +230,16 @@ msgid "reason"
 msgstr "Reason"
 
 #: .\bot\models\log.py:20
+msgid "comment"
+msgstr "Comment"
+
+#: .\bot\models\log.py:21
 msgid "error_message"
 msgstr "Error message"
 
-#: .\bot\models\log.py:21
+#: .\bot\models\log.py:22
 msgid "success"
 msgstr "Success"
-
-#: .\bot\models\log.py:22
-msgid "dummy"
-msgstr "Dummy"
 
 #: .\bot\models\log.py:29
 msgid "log"
@@ -312,10 +327,6 @@ msgstr "Lists"
 #: .\bot\models\stats_views.py:8
 msgid "language"
 msgstr "Language"
-
-#: .\bot\models\stats_views.py:9
-msgid "value"
-msgstr "Value"
 
 #: .\bot\models\stats_views.py:16
 msgid "view"
