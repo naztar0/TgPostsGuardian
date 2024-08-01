@@ -18,9 +18,9 @@ from telethon.tl.types.channels import ChannelParticipants
 from telethon.tl.functions.messages import GetDialogFiltersRequest, GetFullChatRequest, ImportChatInviteRequest, CheckChatInviteRequest
 from telethon.tl.functions.channels import GetParticipantsRequest, EditAdminRequest, UpdateUsernameRequest
 from telethon.tl.functions.chatlists import JoinChatlistInviteRequest, CheckChatlistInviteRequest, LeaveChatlistRequest
-from telethon.errors.rpcerrorlist import ChatAdminRequiredError, MessageNotModifiedError
+from telethon.errors import ChatAdminRequiredError, MessageNotModifiedError, FloodWaitError, UsernameOccupiedError
 
-from app.settings import BASE_DIR, API_ID, API_HASH, USERBOT_PN_LIST, USERBOT_HOST_LIST
+from app.settings import BASE_DIR, API_ID, API_HASH, USERBOT_PN_LIST, USERBOT_HOST_LIST, MAX_SLEEP_TIME
 from bot import models, utils
 from bot.types import Log, Limitation, UsernameChangeReason
 from bot.utils_lib.stats import get_stats_with_graphs
@@ -192,7 +192,11 @@ class App:
                     comment=comment
                 )
                 return new_username
-            except Exception as e:
+            except UsernameOccupiedError:
+                logging.warning(f'Username {new_username} is occupied')
+                await sleep(5)
+            except FloodWaitError as e:
+                logging.warning(f'Flood wait {e.seconds} seconds')
                 await models.Log.objects.acreate(
                     type=Log.USERNAME_CHANGE,
                     userbot=self.userbot,
@@ -202,8 +206,10 @@ class App:
                     comment=comment,
                     error_message=str(e)[-256:]
                 )
-                logging.error(e)
-                await sleep(5)
+                await sleep(min(e.seconds, MAX_SLEEP_TIME))
+            except Exception as e:
+                logging.critical(e)
+                await sleep(60)
 
     async def change_username_by_limit(self, channel: models.Channel, reason, comment, events_count: int, events_limit: int):
         now = datetime.now(timezone.utc)
