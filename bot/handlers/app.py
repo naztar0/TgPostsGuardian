@@ -208,17 +208,14 @@ class App:
                 )
                 if not ignore_wait:
                     await sleep(min(e.seconds, MAX_SLEEP_TIME))
+                return
             except Exception as e:
                 logging.critical(e)
                 if not ignore_wait:
                     await sleep(60)
 
-    async def change_username_by_limit(self, channel: models.Channel, reason, comment, events_count: int, events_limit: int):
-        now = datetime.now(timezone.utc)
-        settings = await models.Settings.objects.aget()
-        unlocked = (channel.last_username_change is None or
-                    channel.last_username_change < now - timedelta(minutes=settings.username_change_cooldown))
-        if not unlocked:
+    async def change_username_by_limit(self, channel: models.Channel, reason: str, comment: str, events_count: int, events_limit: int):
+        if not await utils.is_username_change_unlocked(channel):
             return
         daily_username_changes_count = await models.Log.objects.filter(
             channel=channel, type=Log.USERNAME_CHANGE, success=True, created__gte=utils.day_start()
@@ -503,9 +500,12 @@ class App:
         channel_id_v2 = data['channel_id']
         channel_id_v1 = abs(int(str(channel_id_v2)[3:]))
 
+        username = None
         comment = f'Request from {event.sender_id}'
         channel = await database_sync_to_async(models.Channel.objects.get)(channel_id=channel_id_v1)
-        username = await self.change_username(channel, UsernameChangeReason.THIRD_PARTY_REQUEST, comment, ignore_wait=True)
+
+        if await utils.is_username_change_unlocked(channel):
+            username = await self.change_username(channel, UsernameChangeReason.THIRD_PARTY_REQUEST, comment, ignore_wait=True)
 
         result = json.dumps({'channel_id': channel_id_v2, 'username': username or channel.username})
         await event.respond(f'/update_username {result}')

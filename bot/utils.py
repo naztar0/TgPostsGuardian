@@ -26,6 +26,14 @@ async def loop_wrapper(func, sleep_time, *args, **kwargs):
             await sleep(60 * 5)
 
 
+async def is_username_change_unlocked(channel: models.Channel):
+    now = datetime.now(timezone.utc)
+    settings = await models.Settings.objects.aget()
+    unlocked = (channel.last_username_change is None or
+                channel.last_username_change < now - timedelta(minutes=settings.username_change_cooldown))
+    return unlocked
+
+
 async def collect_media_group(client: TelegramClient, post: types.Message):
     grouped_messages = []
     async for message in client.iter_messages(
