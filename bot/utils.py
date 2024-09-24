@@ -18,9 +18,12 @@ async def loop_wrapper(func, sleep_time, *args, **kwargs):
         except FloodWaitError as e:
             logging.warning(f'Flood wait {e.seconds} seconds')
             await sleep(min(e.seconds, MAX_SLEEP_TIME))
-        except (ValueError, ConnectionError, BufferError) as e:
+        except (ValueError, BufferError) as e:
             logging.error(e)
             await sleep(60)
+        except ConnectionError as e:
+            logging.error(e)
+            raise
         except Exception as e:
             logging.critical(e)
             await sleep(60 * 5)

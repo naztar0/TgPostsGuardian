@@ -3,7 +3,7 @@ import json
 from io import BytesIO
 from contextlib import suppress
 from datetime import datetime, timedelta, timezone
-from asyncio import sleep, gather
+from asyncio import sleep, gather, create_task
 
 from django.db.models import Q
 from channels.db import database_sync_to_async
@@ -60,10 +60,20 @@ class App:
             self.phone_number = phone
 
     async def start(self):
+        while True:
+            with suppress(ConnectionError):
+                await self.run_until_disconnected()
+            await sleep(60)
+
+    async def run_until_disconnected(self):
         # noinspection PyUnresolvedReferences
         await self.client.start(lambda: self.phone_number)
         await self.init_client_info()
         await self.client.get_dialogs()
+
+        # first database access should be under sync_to_async to close old connections
+        settings = await database_sync_to_async(models.Settings.objects.get)()
+
         if not self.host or self.func == 1:
             await self.refresh_me()
         if self.func == 1:
@@ -80,8 +90,6 @@ class App:
                 events.NewMessage(incoming=True, pattern=r'^PUBLISH_POST (?P<data>.+)$')
             )
         self.userbot = await models.UserBot.objects.aget(phone_number=self.phone_number)
-
-        settings = await models.Settings.objects.aget()
 
         if self.host:
             if self.func == 1:
@@ -100,7 +108,14 @@ class App:
             )
 
     async def start_jobs(self, *jobs: tuple[str, int]):
-        await gather(*[self.loop_wrapper(getattr(self, job), interval) for job, interval in jobs])
+        tasks = []
+        try:
+            tasks = [create_task(self.loop_wrapper(getattr(self, job), interval)) for job, interval in jobs]
+            await gather(*tasks)
+        except ConnectionError:
+            for task in tasks:
+                task.cancel()
+            raise
 
     async def loop_wrapper(self, func, sleep_time, *args, **kwargs):
         async def wrapper():
