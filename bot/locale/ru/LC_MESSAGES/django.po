@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-07-24 23:29+0200\n"
+"POT-Creation-Date: 2024-08-01 03:32+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -20,12 +20,13 @@ msgstr ""
 "%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || (n"
 "%100>=11 && n%100<=14)? 2 : 3);\n"
 
-#: .\bot\admin\__init__.py:15
+#: .\bot\admin\__init__.py:16
 msgid "admin_panel"
 msgstr "TgPostsGuardian"
 
-#: .\bot\admin\channel.py:15 .\bot\admin\limitation.py:15 .\bot\admin\log.py:15
-#: .\bot\admin\settings.py:7 .\bot\admin\stats_views.py:14
+#: .\bot\admin\channel.py:15 .\bot\admin\excess.py:14
+#: .\bot\admin\limitation.py:15 .\bot\admin\log.py:15 .\bot\admin\settings.py:7
+#: .\bot\admin\stats_views.py:14
 msgid "parameters"
 msgstr "Параметры"
 
@@ -38,11 +39,11 @@ msgstr "@юзернейм"
 msgid "owner"
 msgstr "Владелец"
 
-#: .\bot\admin\limitation.py:25 .\bot\admin\log.py:30
+#: .\bot\admin\excess.py:22 .\bot\admin\limitation.py:25 .\bot\admin\log.py:31
 #: .\bot\admin\post_check.py:19 .\bot\admin\stats_views.py:22
-#: .\bot\models\channel.py:27 .\bot\models\limitation.py:11
-#: .\bot\models\log.py:15 .\bot\models\post_check.py:6
-#: .\bot\models\stats_views.py:7
+#: .\bot\models\channel.py:27 .\bot\models\excess.py:9
+#: .\bot\models\limitation.py:11 .\bot\models\log.py:15
+#: .\bot\models\post_check.py:6 .\bot\models\stats_views.py:7
 msgid "channel"
 msgstr "Канал"
 
@@ -50,7 +51,7 @@ msgstr "Канал"
 msgid "lang_stats_restrictions"
 msgstr "Ограничения по языковой статистике"
 
-#: .\bot\admin\log.py:23 .\bot\models\userbot.py:19
+#: .\bot\admin\log.py:24 .\bot\models\userbot.py:19
 msgid "userbot"
 msgstr "Юзербот"
 
@@ -105,6 +106,37 @@ msgstr "Удалять все посты спустя N дней"
 msgid "channels"
 msgstr "Каналы"
 
+#: .\bot\models\excess.py:7 .\bot\models\log.py:7
+msgid "deletion"
+msgstr "🗑️ Удаление"
+
+#: .\bot\models\excess.py:7 .\bot\models\log.py:7
+msgid "username_change"
+msgstr "👤 Изменение юзернейма"
+
+#: .\bot\models\excess.py:8 .\bot\models\limitation.py:10
+#: .\bot\models\log.py:12 .\bot\models\stats_views.py:6
+#: .\bot\models\userbot.py:6
+msgid "created_utc"
+msgstr "🕐 Создано, UTC"
+
+#: .\bot\models\excess.py:10 .\bot\models\limitation.py:12
+#: .\bot\models\log.py:13
+msgid "type"
+msgstr "Тип"
+
+#: .\bot\models\excess.py:11 .\bot\models\stats_views.py:9
+msgid "value"
+msgstr "Значение"
+
+#: .\bot\models\excess.py:18
+msgid "excess"
+msgstr "Избыток"
+
+#: .\bot\models\excess.py:19
+msgid "excesses"
+msgstr "Избытки"
+
 #: .\bot\models\limitation.py:8
 msgid "limitation_post_views"
 msgstr "👁 Просмотры поста"
@@ -112,15 +144,6 @@ msgstr "👁 Просмотры поста"
 #: .\bot\models\limitation.py:9
 msgid "limitation_language_stats"
 msgstr "🌐 Языковая статистика"
-
-#: .\bot\models\limitation.py:10 .\bot\models\log.py:12
-#: .\bot\models\stats_views.py:6 .\bot\models\userbot.py:6
-msgid "created_utc"
-msgstr "🕐 Создано, UTC"
-
-#: .\bot\models\limitation.py:12 .\bot\models\log.py:13
-msgid "type"
-msgstr "Тип"
 
 #: .\bot\models\limitation.py:13
 msgid "limitation_views"
@@ -176,14 +199,6 @@ msgstr "Ограничение"
 msgid "limitations"
 msgstr "Ограничения"
 
-#: .\bot\models\log.py:7
-msgid "deletion"
-msgstr "🗑️ Удаление"
-
-#: .\bot\models\log.py:7
-msgid "username_change"
-msgstr "👤 Изменение юзернейма"
-
 #: .\bot\models\log.py:8
 msgid "deletions_limit"
 msgstr "🗑️ Лимит удалений"
@@ -217,18 +232,22 @@ msgid "reason"
 msgstr "Причина"
 
 #: .\bot\models\log.py:20
+msgid "comment"
+msgstr "Комментарий"
+
+#: .\bot\models\log.py:21
 msgid "error_message"
 msgstr "Сообщение об ошибке"
 
-#: .\bot\models\log.py:21
+#: .\bot\models\log.py:22
 msgid "success"
 msgstr "Успешно"
 
-#: .\bot\models\log.py:28
+#: .\bot\models\log.py:29
 msgid "log"
 msgstr "Лог"
 
-#: .\bot\models\log.py:29
+#: .\bot\models\log.py:30
 msgid "logs"
 msgstr "Логи"
 
@@ -310,10 +329,6 @@ msgstr "Списки"
 #: .\bot\models\stats_views.py:8
 msgid "language"
 msgstr "Язык"
-
-#: .\bot\models\stats_views.py:9
-msgid "value"
-msgstr "Значение"
 
 #: .\bot\models\stats_views.py:16
 msgid "view"

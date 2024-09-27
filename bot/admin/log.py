@@ -12,12 +12,13 @@ class LogAdmin(admin.ModelAdmin):
     list_filter = ['type', 'success', 'channel__title', 'reason']
 
     fieldsets = [
-        (_('parameters'), {'fields': ['userbot', 'type', 'channel', 'post_id', 'post_date', 'post_views', 'reason', 'success', 'error_message']}),
+        (_('parameters'), {'fields': ['userbot', 'type', 'channel', 'post_id', 'post_date', 'post_views', 'reason',
+                                      'success', 'comment', 'error_message']}),
     ]
 
     def user_custom(self, obj):
         if obj.userbot:
-            return format_html(f'<a href="/bot/user/?q={obj.userbot.user_id}">{obj.userbot.first_name}&nbsp;{obj.userbot.last_name}</a>')
+            return format_html(f'<a href="/bot/userbot/?q={obj.userbot.user_id}">{obj.userbot.first_name}&nbsp;{obj.userbot.last_name}</a>')
         else:
             return '-'
     user_custom.short_description = _('userbot')

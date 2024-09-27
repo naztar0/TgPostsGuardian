@@ -6,8 +6,8 @@ from asyncio import sleep
 from datetime import datetime, timedelta, timezone, date as date_t
 from telethon import TelegramClient, types
 from telethon.errors import FloodWaitError
+from app.settings import MAX_SLEEP_TIME
 from bot import models
-from bot.types import Log
 
 
 async def loop_wrapper(func, sleep_time, *args, **kwargs):
@@ -17,13 +17,24 @@ async def loop_wrapper(func, sleep_time, *args, **kwargs):
             await sleep(random.randint(sleep_time, sleep_time + 16))
         except FloodWaitError as e:
             logging.warning(f'Flood wait {e.seconds} seconds')
-            await sleep(e.seconds)
-        except (ValueError, ConnectionError, BufferError) as e:
+            await sleep(min(e.seconds, MAX_SLEEP_TIME))
+        except (ValueError, BufferError) as e:
             logging.error(e)
             await sleep(60)
+        except ConnectionError as e:
+            logging.error(e)
+            raise
         except Exception as e:
             logging.critical(e)
             await sleep(60 * 5)
+
+
+async def is_username_change_unlocked(channel: models.Channel):
+    now = datetime.now(timezone.utc)
+    settings = await models.Settings.objects.aget()
+    unlocked = (channel.last_username_change is None or
+                channel.last_username_change < now - timedelta(minutes=settings.username_change_cooldown))
+    return unlocked
 
 
 async def collect_media_group(client: TelegramClient, post: types.Message):
@@ -52,20 +63,6 @@ def get_media_file_id(message: types.Message):
     else:
         media = message
     return media.file_id
-
-
-async def can_change_username(channel: models.Channel, events_count: int, events_limit: int):
-    now = datetime.now(timezone.utc)
-    daily_username_changes_count = await models.Log.objects.filter(
-        channel=channel, type=Log.USERNAME_CHANGE, success=True,
-        created__year=now.year, created__month=now.month, created__day=now.day,
-    ).acount()
-    settings = await models.Settings.objects.aget()
-    return (
-            events_count >= events_limit * (daily_username_changes_count + 1) and
-            (channel.last_username_change is None or
-             channel.last_username_change < now - timedelta(minutes=settings.username_change_cooldown))
-    )
 
 
 class LanguageStats:

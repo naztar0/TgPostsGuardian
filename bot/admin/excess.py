@@ -3,16 +3,16 @@ from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
 
-class StatsViewsAdmin(admin.ModelAdmin):
-    list_display = ['created', 'channel_custom', 'language', 'value']
+class ExcessAdmin(admin.ModelAdmin):
+    list_display = ['created', 'channel_custom', 'type', 'value']
     list_per_page = 25
 
     date_hierarchy = 'created'
     search_fields = ['channel__title']
-    list_filter = ['channel__title']
+    list_filter = ['channel__title', 'type']
 
     fieldsets = [
-        (_('parameters'), {'fields': ['channel']}),
+        (_('parameters'), {'fields': ['created', 'channel', 'type', 'value']}),
     ]
 
     def channel_custom(self, obj):

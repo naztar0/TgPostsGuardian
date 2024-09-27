@@ -3,8 +3,9 @@ import json
 from io import BytesIO
 from contextlib import suppress
 from datetime import datetime, timedelta, timezone
-from asyncio import sleep, gather
+from asyncio import sleep, gather, create_task
 
+from django.db.models import Q
 from channels.db import database_sync_to_async
 
 from telethon import TelegramClient, types, events
@@ -17,9 +18,9 @@ from telethon.tl.types.channels import ChannelParticipants
 from telethon.tl.functions.messages import GetDialogFiltersRequest, GetFullChatRequest, ImportChatInviteRequest, CheckChatInviteRequest
 from telethon.tl.functions.channels import GetParticipantsRequest, EditAdminRequest, UpdateUsernameRequest
 from telethon.tl.functions.chatlists import JoinChatlistInviteRequest, CheckChatlistInviteRequest, LeaveChatlistRequest
-from telethon.errors.rpcerrorlist import ChatAdminRequiredError, MessageNotModifiedError
+from telethon.errors import ChatAdminRequiredError, MessageNotModifiedError, FloodWaitError, UsernameOccupiedError
 
-from app.settings import BASE_DIR, API_ID, API_HASH, USERBOT_PN_LIST, USERBOT_HOST_LIST
+from app.settings import BASE_DIR, API_ID, API_HASH, USERBOT_PN_LIST, USERBOT_HOST_LIST, MAX_SLEEP_TIME
 from bot import models, utils
 from bot.types import Log, Limitation, UsernameChangeReason
 from bot.utils_lib.stats import get_stats_with_graphs
@@ -59,10 +60,20 @@ class App:
             self.phone_number = phone
 
     async def start(self):
+        while True:
+            with suppress(ConnectionError):
+                await self.run_until_disconnected()
+            await sleep(60)
+
+    async def run_until_disconnected(self):
         # noinspection PyUnresolvedReferences
         await self.client.start(lambda: self.phone_number)
         await self.init_client_info()
         await self.client.get_dialogs()
+
+        # first database access should be under sync_to_async to close old connections
+        settings = await database_sync_to_async(models.Settings.objects.get)()
+
         if not self.host or self.func == 1:
             await self.refresh_me()
         if self.func == 1:
@@ -79,8 +90,6 @@ class App:
                 events.NewMessage(incoming=True, pattern=r'^PUBLISH_POST (?P<data>.+)$')
             )
         self.userbot = await models.UserBot.objects.aget(phone_number=self.phone_number)
-
-        settings = await models.Settings.objects.aget()
 
         if self.host:
             if self.func == 1:
@@ -99,7 +108,14 @@ class App:
             )
 
     async def start_jobs(self, *jobs: tuple[str, int]):
-        await gather(*[self.loop_wrapper(getattr(self, job), interval) for job, interval in jobs])
+        tasks = []
+        try:
+            tasks = [create_task(self.loop_wrapper(getattr(self, job), interval)) for job, interval in jobs]
+            await gather(*tasks)
+        except ConnectionError:
+            for task in tasks:
+                task.cancel()
+            raise
 
     async def loop_wrapper(self, func, sleep_time, *args, **kwargs):
         async def wrapper():
@@ -174,7 +190,7 @@ class App:
             await self.client.get_dialogs()
             logging.info(f'Joined {len(channels)} channels: {", ".join([channel.title for channel in channels])}')
 
-    async def change_username(self, channel: models.Channel, reason):
+    async def change_username(self, channel: models.Channel, reason, comment, ignore_wait=False):
         for _ in range(3):
             new_username = await utils.rand_username(channel.username)
             logging.info(f'Updating channel {channel.title} username to {new_username}')
@@ -187,20 +203,56 @@ class App:
                     type=Log.USERNAME_CHANGE,
                     userbot=self.userbot,
                     channel=channel,
-                    reason=reason
+                    reason=reason,
+                    comment=comment
                 )
                 return new_username
-            except Exception as e:
+            except UsernameOccupiedError:
+                logging.warning(f'Username {new_username} is occupied')
+                await sleep(5)
+            except FloodWaitError as e:
+                logging.warning(f'Flood wait {e.seconds} seconds')
                 await models.Log.objects.acreate(
                     type=Log.USERNAME_CHANGE,
                     userbot=self.userbot,
                     channel=channel,
                     success=False,
                     reason=reason,
+                    comment=comment,
                     error_message=str(e)[-256:]
                 )
-                logging.error(e)
-                await sleep(5)
+                if not ignore_wait:
+                    await sleep(min(e.seconds, MAX_SLEEP_TIME))
+                return
+            except Exception as e:
+                logging.critical(e)
+                if not ignore_wait:
+                    await sleep(60)
+
+    async def change_username_by_limit(self, channel: models.Channel, reason: str, comment: str, events_count: int, events_limit: int):
+        if not await utils.is_username_change_unlocked(channel):
+            return
+        daily_username_changes_count = await models.Log.objects.filter(
+            channel=channel, type=Log.USERNAME_CHANGE, success=True, created__gte=utils.day_start()
+        ).acount()
+        excess = await models.Excess.objects.filter(
+            channel=channel, type=Log.USERNAME_CHANGE, created__gte=utils.day_start()
+        ).order_by('-created').afirst()
+        daily_exceeded = ((excess.value if excess else 0) + daily_username_changes_count) * events_limit
+        if daily_exceeded >= events_count:
+            return
+        total_exceeded = (events_count - daily_exceeded) // events_limit
+        logging.info(f'Daily username changes {daily_username_changes_count}, daily exceeded {daily_exceeded}, total exceeded {total_exceeded}')
+        if total_exceeded == 0:
+            return
+        new_excess = total_exceeded - 1
+        if new_excess > 0:
+            if excess:
+                excess.value += new_excess
+                await excess.asave()
+            else:
+                await models.Excess.objects.acreate(channel=channel, type=Log.USERNAME_CHANGE, value=new_excess)
+        return await self.change_username(channel, reason, comment)
 
     async def get_channels(self, owner=False):
         channels = models.Channel.objects.all()
@@ -224,11 +276,10 @@ class App:
                 created__year=now.year, created__month=now.month, created__day=now.day,
             ).values('post_id').distinct().acount()
             logging.info(f'Checking channel {channel.title} with {daily_deletions_count} daily deletions')
-            if (
-                    channel.deletions_count_for_username_change and
-                    await utils.can_change_username(channel, daily_deletions_count, channel.deletions_count_for_username_change)
-            ):
-                await self.change_username(channel, UsernameChangeReason.DELETIONS_LIMIT)
+            if channel.deletions_count_for_username_change:
+                comment = f'Daily deletions {daily_deletions_count} > limit {channel.deletions_count_for_username_change}'
+                await self.change_username_by_limit(channel, UsernameChangeReason.DELETIONS_LIMIT, comment,
+                                                    daily_deletions_count, channel.deletions_count_for_username_change)
 
     async def delete_old_posts(self):
         now = datetime.now(timezone.utc)
@@ -354,8 +405,10 @@ class App:
         if hourly_distribution:
             max_views //= 24 - datetime.now(timezone.utc).hour
         logging.info(f'Views: {current_views}, max views: {max_views}')
-        if current_views > max_views and await utils.can_change_username(channel, current_views, max_views):
-            await self.change_username(channel, UsernameChangeReason.LANGUAGE_STATS_VIEWS_LIMIT)
+        if current_views > max_views:
+            comment = f'Views {current_views} > limit {max_views}'
+            await self.change_username_by_limit(channel, UsernameChangeReason.LANGUAGE_STATS_VIEWS_LIMIT, comment,
+                                                current_views, max_views)
             await sleep(30)
             return True
         return False
@@ -372,13 +425,16 @@ class App:
         if last_views.created < datetime.now(timezone.utc) - timedelta(minutes=interval):
             percent_diff = (current_views - last_views.value) * 100 / last_views.value
             logging.info(f'Percent: {percent_diff}, max percent: {max_diff}')
-            if percent_diff > max_diff and await utils.can_change_username(channel, percent_diff, max_diff):
-                await self.change_username(channel, UsernameChangeReason.LANGUAGE_STATS_VIEWS_DIFFERENCE_LIMIT)
+            if percent_diff > max_diff:
+                comment = f'Views difference for {language} {percent_diff}% ({last_views.value}|{current_views}) > limit {max_diff}%'
+                await self.change_username_by_limit(channel, UsernameChangeReason.LANGUAGE_STATS_VIEWS_DIFFERENCE_LIMIT,
+                                                    comment, percent_diff, max_diff)
                 await sleep(30)
                 return True
         return False
 
     async def check_lang_stats(self):
+        today = datetime.now(timezone.utc).date()
         async for channel in await self.get_channels(owner=True):
             logging.info(f'Checking channel lang stats {channel.title} ({channel.channel_id})')
             try:
@@ -387,10 +443,10 @@ class App:
                 logging.warning(f'Cant get stats for {channel.title}')
                 continue
             async for limitation in models.Limitation.objects.filter(
-                    channel=channel, type=Limitation.LANGUAGE_STATS
+                Q(channel=channel) & Q(type=Limitation.LANGUAGE_STATS) &
+                (Q(start_date__lte=today) | Q(start_date=None)) &
+                (Q(end_date__gte=today) | Q(end_date=None))
             ).order_by('-created'):
-                if not limitation.lang_stats_restrictions:
-                    continue
                 lang_stats = utils.LanguageStats()
                 lang_stats.get_languages_graph_views(graphs, days=1)
                 lang_stats.parse_lang_stats_restrictions(limitation.lang_stats_restrictions)
@@ -459,8 +515,12 @@ class App:
         channel_id_v2 = data['channel_id']
         channel_id_v1 = abs(int(str(channel_id_v2)[3:]))
 
+        username = None
+        comment = f'Request from {event.sender_id}'
         channel = await database_sync_to_async(models.Channel.objects.get)(channel_id=channel_id_v1)
-        username = await self.change_username(channel, UsernameChangeReason.THIRD_PARTY_REQUEST)
+
+        if await utils.is_username_change_unlocked(channel):
+            username = await self.change_username(channel, UsernameChangeReason.THIRD_PARTY_REQUEST, comment, ignore_wait=True)
 
         result = json.dumps({'channel_id': channel_id_v2, 'username': username or channel.username})
         await event.respond(f'/update_username {result}')
