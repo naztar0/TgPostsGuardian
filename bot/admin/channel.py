@@ -9,7 +9,7 @@ class ChannelAdmin(admin.ModelAdmin):
     list_per_page = 25
 
     search_fields = ['channel_id', 'title', 'username']
-    list_filter = ['owner', 'has_protected_content', 'delete_albums', 'republish_today_posts']
+    list_filter = ['owner__username', 'has_protected_content', 'delete_albums', 'republish_today_posts']
 
     fieldsets = [
         (_('parameters'), {'fields': ['channel_id', 'owner', 'history_days_limit', 'delete_albums', 'republish_today_posts',
@@ -18,14 +18,18 @@ class ChannelAdmin(admin.ModelAdmin):
 
     def username_custom(self, obj):
         if obj.username:
-            return format_html(f'<a href="tg://resolve?domain={obj.username}">@{obj.username}</a>')
+            return format_html('<a href="tg://resolve?domain={username}">@{username}</a>', username=obj.username)
         else:
             return '-'
     username_custom.short_description = _('@username')
 
     def owner_custom(self, obj):
         if obj.owner:
-            return format_html(f'<a href="/bot/userbot/?q={obj.owner.user_id}">{obj.owner.first_name}&nbsp;{obj.owner.last_name}</a>')
+            full_name = f'{obj.owner.first_name}&nbsp;{obj.owner.last_name}' \
+                if obj.owner.last_name \
+                else obj.owner.first_name
+            return format_html('<a href="/bot/userbot/?q={user_id}">{full_name}</a>',
+                               user_id=obj.owner.user_id, full_name=full_name)
         else:
             return '-'
     owner_custom.short_description = _('owner')

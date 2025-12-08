@@ -1,0 +1,30 @@
+x-service-base: &service_base
+  build:
+    dockerfile: Dockerfile
+  volumes:
+    - /srv/tg-posts-guardian/static:/app/static
+    - /srv/tg-posts-guardian/sessions:/usr/sessions
+  extra_hosts:
+    - 'host.docker.internal:host-gateway'
+  networks:
+    - app-net
+  restart: unless-stopped
+  logging:
+    options:
+      max-size: '10m'
+      max-file: '3'
+
+x-bot-base:
+  <<: *service_base
+  command: uv run manage.py start
+
+services:
+  app:
+    <<: *service_base
+    container_name: tpg-app
+    ports:
+      - '8246:8246'
+
+networks:
+  app-net:
+    driver: bridge

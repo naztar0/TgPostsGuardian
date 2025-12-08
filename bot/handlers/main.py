@@ -1,9 +1,9 @@
-from asyncio import get_event_loop
+import asyncio
 from bot import utils
 from .app import App
 
 
-def main(number, host=0, func=0):
-    utils.init_logger(number)
-    app = App(number, host, func)
-    get_event_loop().run_until_complete(app.start())
+def main(phone_number: str, host: bool, func: int):
+    utils.init_logger(phone_number)
+    app = App(phone_number, host, func)
+    asyncio.run(app.start())

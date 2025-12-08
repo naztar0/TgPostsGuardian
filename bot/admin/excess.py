@@ -17,7 +17,8 @@ class ExcessAdmin(admin.ModelAdmin):
 
     def channel_custom(self, obj):
         if obj.channel:
-            return format_html(f'<a href="/bot/channel/?q={obj.channel.channel_id}">{obj.channel.title}</a>')
+            return format_html('<a href="/bot/channel/?q={channel_id}">{title}</a>',
+                               channel_id=obj.channel.channel_id, title=obj.channel.title)
         else:
             return '-'
     channel_custom.short_description = _('channel')

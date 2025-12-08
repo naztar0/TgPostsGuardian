@@ -1,6 +1,6 @@
 import os
 import logging
-import pytz
+from pathlib import Path
 from envparse import env
 from dotenv import load_dotenv
 from django.utils.translation import gettext_lazy as _
@@ -9,9 +9,7 @@ LOG_LEVEL = env.str('LOG_LEVEL', default='INFO')
 DEBUG = LOG_LEVEL == 'DEBUG'
 logging.basicConfig(level=LOG_LEVEL)
 
-local_tz = pytz.timezone('Europe/Kiev')
-
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv()
 
 SECRET_KEY = env.str('SECRET_KEY')
@@ -83,7 +81,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            os.path.join(BASE_DIR, 'templates'),
+            BASE_DIR / 'templates',
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -143,13 +141,14 @@ USE_TZ = True
 
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = BASE_DIR / 'static'
 STATIC_URL = '/static/'
 
-STATICFILES_DIRS = (os.path.join(BASE_DIR, 'staticfiles'),)
+STATICFILES_DIRS = (BASE_DIR / 'staticfiles',)
 
-LOCALE_PATHS = (os.path.join(BASE_DIR, 'locale'),)
+LOCALE_PATHS = (BASE_DIR / 'locale',)
 
+SESSIONS_DIR = Path('/usr/sessions')
 
 ADMIN_REORDER = [
     {

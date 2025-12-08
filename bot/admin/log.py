@@ -18,14 +18,19 @@ class LogAdmin(admin.ModelAdmin):
 
     def user_custom(self, obj):
         if obj.userbot:
-            return format_html(f'<a href="/bot/userbot/?q={obj.userbot.user_id}">{obj.userbot.first_name}&nbsp;{obj.userbot.last_name}</a>')
+            full_name = f'{obj.userbot.first_name}&nbsp;{obj.userbot.last_name}' \
+                if obj.userbot.last_name \
+                else obj.userbot.first_name
+            return format_html('<a href="/bot/userbot/?q={user_id}">{full_name}</a>',
+                               user_id=obj.userbot.user_id, full_name=full_name)
         else:
             return '-'
     user_custom.short_description = _('userbot')
 
     def channel_custom(self, obj):
         if obj.channel:
-            return format_html(f'<a href="/bot/channel/?q={obj.channel.channel_id}">{obj.channel.title}</a>')
+            return format_html('<a href="/bot/channel/?q={channel_id}">{title}</a>',
+                               channel_id=obj.channel.channel_id, title=obj.channel.title)
         else:
             return '-'
     channel_custom.short_description = _('channel')
