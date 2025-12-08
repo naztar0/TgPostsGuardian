@@ -142,8 +142,8 @@ cython_debug/
 server_config/
 static/plugins/
 
-sessions/*
-pids/*
-
 log.txt
 nohup.out
+
+sessions/
+docker-compose.gen.*
