@@ -235,6 +235,8 @@ class App:
         if (await models.Settings.objects.aget()).individual_allocations:
             channels_count = await channels.acount()
             userbot_count = await models.UserBot.objects.acount()
+            if channels_count == 0 or userbot_count == 0:
+                return None
             if userbot_count <= channels_count:
                 # split channels as evenly as possible between bots
                 low = (self.n * channels_count) // userbot_count
@@ -275,8 +277,11 @@ class App:
             await sleep(5)
 
     async def check_post_views(self):
+        channels = await self.get_channels()
+        if not channels:
+            return
         chunk, offset = 5, 0
-        channels = [x async for x in await self.get_channels()]
+        channels = [x async for x in channels]
         while offset < len(channels):
             await utils.gather_coroutines([
                 self.check_channel_post_views(channel)
@@ -422,8 +427,11 @@ class App:
         return False
 
     async def check_lang_stats(self):
+        channels = await self.get_channels(owner=True)
+        if not channels:
+            return
         today = datetime.now(timezone.utc).date()
-        async for channel in await self.get_channels(owner=True):
+        async for channel in channels:
             logging.info(f'Checking channel lang stats {channel.title} ({channel.channel_id})')
             try:
                 stats, graphs = await get_stats_with_graphs(self.client, channel.v2_id, ['languages_graph'])
