@@ -15,8 +15,10 @@ from telethon.tl.types import DialogFilterChatlist, InputChatlistDialogFilter, C
 from telethon.tl.types.messages import DialogFilters
 from telethon.tl.types.chatlists import ChatlistInvite
 from telethon.tl.functions.account import UpdateStatusRequest, SetAccountTTLRequest
+from telethon.tl.functions.account import UpdateUsernameRequest as UpdateAccountUsernameRequest
 from telethon.tl.functions.messages import GetDialogFiltersRequest, ImportChatInviteRequest, CheckChatInviteRequest
-from telethon.tl.functions.channels import EditAdminRequest, UpdateUsernameRequest
+from telethon.tl.functions.channels import EditAdminRequest
+from telethon.tl.functions.channels import UpdateUsernameRequest as UpdateChannelUsernameRequest
 from telethon.tl.functions.chatlists import JoinChatlistInviteRequest, CheckChatlistInviteRequest, LeaveChatlistRequest
 from telethon.errors import ChatAdminRequiredError, MessageNotModifiedError, FloodWaitError, UsernameOccupiedError
 
@@ -135,6 +137,8 @@ class App:
 
     async def setup_account(self):
         await self.client(SetAccountTTLRequest(ttl=AccountDaysTTL(days=720)))
+        if not self.username:
+            await self.client(UpdateAccountUsernameRequest(utils.rand_username('tpg_admin_bot____', 3)))
 
     async def switch_offline(self):
         await self.client(UpdateStatusRequest(offline=False))
@@ -168,7 +172,7 @@ class App:
             new_username = utils.rand_username(channel.username, sl)
             logging.info(f'Updating channel {channel.title} username to {new_username}')
             try:
-                await self.client(UpdateUsernameRequest(channel.v2_id, new_username))
+                await self.client(UpdateChannelUsernameRequest(channel.v2_id, new_username))
                 channel.username = new_username
                 channel.last_username_change = datetime.now(timezone.utc)
                 await channel.asave()
@@ -278,7 +282,7 @@ class App:
 
     async def check_post_views(self):
         channels = await self.get_channels()
-        if not channels:
+        if channels is None:
             return
         chunk, offset = 5, 0
         channels = [x async for x in channels]
@@ -428,7 +432,7 @@ class App:
 
     async def check_lang_stats(self):
         channels = await self.get_channels(owner=True)
-        if not channels:
+        if channels is None:
             return
         today = datetime.now(timezone.utc).date()
         async for channel in channels:
