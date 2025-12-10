@@ -9,7 +9,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 RUN apt update  \
-    && apt install -y --no-install-recommends build-essential curl pkg-config libpq-dev \
+    && apt install -y --no-install-recommends build-essential curl pkg-config libpq-dev gettext \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /opt/venv
 
