@@ -23,11 +23,11 @@ WEBAPP_PORT = env.int('WEBAPP_PORT', default=8080)
 WEBHOOK_DOMAIN = env.str('WEBHOOK_DOMAIN', default='example.com')
 BASE_ADMIN_PATH = f'https://{WEBHOOK_DOMAIN}'
 
-MYSQL_HOST = env.str('MYSQL_HOST', default='localhost')
-MYSQL_PORT = env.int('MYSQL_PORT', default=3306)
-MYSQL_PASSWORD = env.str('MYSQL_PASSWORD', default='')
-MYSQL_USER = env.str('MYSQL_USER', default='')
-MYSQL_DB = env.str('MYSQL_DB', default='')
+POSTGRESQL_HOST = env.str('POSTGRESQL_HOST', default='localhost')
+POSTGRESQL_PORT = env.int('POSTGRESQL_PORT', default=5432)
+POSTGRESQL_PASSWORD = env.str('POSTGRESQL_PASSWORD', default='')
+POSTGRESQL_USER = env.str('POSTGRESQL_USER', default='')
+POSTGRESQL_DB = env.str('POSTGRESQL_DB', default='')
 
 BOT_ADMINS = env.list('BOT_ADMINS', default=0)
 
@@ -99,15 +99,12 @@ WSGI_APPLICATION = 'app.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': MYSQL_DB,
-        'USER': MYSQL_USER,
-        'PASSWORD': MYSQL_PASSWORD,
-        'HOST': MYSQL_HOST,
-        'PORT': MYSQL_PORT,
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-        },
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': POSTGRESQL_DB,
+        'USER': POSTGRESQL_USER,
+        'PASSWORD': POSTGRESQL_PASSWORD,
+        'HOST': POSTGRESQL_HOST,
+        'PORT': POSTGRESQL_PORT,
     }
 }
 

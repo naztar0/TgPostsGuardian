@@ -9,7 +9,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 RUN apt update  \
-    && apt install -y --no-install-recommends curl pkg-config python3-dev default-libmysqlclient-dev build-essential \
+    && apt install -y --no-install-recommends build-essential curl pkg-config libpq-dev \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /opt/venv
 
@@ -26,6 +26,7 @@ COPY .. .
 RUN python -m compileall -q .
 
 RUN chmod +x ./setup.sh && ./setup.sh
+RUN mv ./static ./static_build
 
 
 FROM python:3.12-slim AS runtime
@@ -40,7 +41,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 RUN apt update  \
-    && apt install -y --no-install-recommends curl pkg-config python3-dev default-libmysqlclient-dev build-essential \
+    && apt install -y --no-install-recommends build-essential curl pkg-config libpq-dev \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir /usr/sessions \
     && mkdir -p /home/appuser/.cache/uv
