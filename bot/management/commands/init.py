@@ -22,13 +22,13 @@ class Command(BaseCommand):
                 logging.warning(f'Removing old userbot {user.phone_number}')
                 user.delete()
         for i, phone_number in enumerate(USERBOT_PN_LIST):
-            logging.info(i, phone_number)
+            logging.warning(f'[{i}]: {phone_number}')
             try:
                 asyncio.run(login.initialize(phone_number, False, options['skip_codes'], options['remove_skipped']))
             except login.SkipCode:
                 logging.warning('Code skipped')
         for i, phone_number in enumerate(USERBOT_HOST_LIST):
-            logging.info(i, phone_number)
+            logging.warning(f'[{i}]: {phone_number}')
             try:
                 asyncio.run(login.initialize(phone_number, True, options['skip_codes'], options['remove_skipped']))
             except login.SkipCode:
