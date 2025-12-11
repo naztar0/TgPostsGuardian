@@ -243,7 +243,9 @@ class App:
             channels_count = await channels.acount()
             userbot_count = await models.UserBot.objects.acount()
             if channels_count == 0 or userbot_count == 0:
-                return None
+                self.last_channels_update = datetime.now()
+                self.channels = []
+                return self.channels
             if userbot_count <= channels_count:
                 # split channels as evenly as possible between bots
                 low = (self.n * channels_count) // userbot_count
