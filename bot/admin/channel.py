@@ -25,7 +25,7 @@ class ChannelAdmin(admin.ModelAdmin):
 
     def owner_custom(self, obj):
         if obj.owner:
-            full_name = f'{obj.owner.first_name}&nbsp;{obj.owner.last_name}' \
+            full_name = f'{obj.owner.first_name} {obj.owner.last_name}' \
                 if obj.owner.last_name \
                 else obj.owner.first_name
             return format_html('<a href="/bot/userbot/?q={user_id}">{full_name}</a>',
