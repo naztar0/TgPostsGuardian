@@ -241,7 +241,7 @@ class App:
             channels = channels.filter(owner=self.userbot)
         if (await models.Settings.objects.aget()).individual_allocations:
             channels_count = await channels.acount()
-            userbot_count = await models.UserBot.objects.acount()
+            userbot_count = await models.UserBot.objects.filter(phone_number__in=USERBOT_PN_LIST).acount()
             if channels_count == 0 or userbot_count == 0:
                 self.last_channels_update = datetime.now()
                 self.channels = []
