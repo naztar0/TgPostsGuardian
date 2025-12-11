@@ -18,7 +18,7 @@ class LogAdmin(admin.ModelAdmin):
 
     def user_custom(self, obj):
         if obj.userbot:
-            full_name = f'{obj.userbot.first_name}&nbsp;{obj.userbot.last_name}' \
+            full_name = f'{obj.userbot.first_name} {obj.userbot.last_name}' \
                 if obj.userbot.last_name \
                 else obj.userbot.first_name
             return format_html('<a href="/bot/userbot/?q={user_id}">{full_name}</a>',

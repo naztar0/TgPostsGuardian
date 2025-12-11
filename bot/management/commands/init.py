@@ -1,7 +1,8 @@
 import logging
 import asyncio
+import os
 from django.core.management.base import BaseCommand
-from app.settings import USERBOT_PN_LIST, USERBOT_HOST_LIST
+from app.settings import USERBOT_PN_LIST, USERBOT_HOST_LIST, SESSIONS_DIR
 from bot import login, models
 
 
@@ -12,6 +13,10 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         logging.info('Initializing')
+        for file in os.listdir(SESSIONS_DIR):
+            if file.endswith('-journal'):
+                logging.warning(f'Removing journal {file}')
+                os.remove(SESSIONS_DIR / file)
         for user in models.UserBot.objects.all():
             if user.phone_number not in USERBOT_HOST_LIST and user.phone_number not in USERBOT_PN_LIST:
                 logging.warning(f'Removing old userbot {user.phone_number}')
