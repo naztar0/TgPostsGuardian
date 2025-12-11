@@ -19,7 +19,7 @@ class Command(makemessages.Command):
     include_dirs = []
 
     def handle(self, *args, **options):
-        ignore_patterns = ['venv/*']
+        ignore_patterns = ['.venv/*']
 
         print('processing domain django')
         self._domain = 'django'
