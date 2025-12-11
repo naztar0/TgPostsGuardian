@@ -15,10 +15,8 @@ from telethon.tl.types import DialogFilterChatlist, InputChatlistDialogFilter, C
 from telethon.tl.types.messages import DialogFilters
 from telethon.tl.types.chatlists import ChatlistInvite
 from telethon.tl.functions.account import UpdateStatusRequest, SetAccountTTLRequest
-from telethon.tl.functions.account import UpdateUsernameRequest as UpdateAccountUsernameRequest
-from telethon.tl.functions.messages import GetDialogFiltersRequest, ImportChatInviteRequest, CheckChatInviteRequest
-from telethon.tl.functions.channels import EditAdminRequest
-from telethon.tl.functions.channels import UpdateUsernameRequest as UpdateChannelUsernameRequest
+from telethon.tl.functions.messages import GetDialogFiltersRequest, ImportChatInviteRequest, CheckChatInviteRequest, GetFullChatRequest
+from telethon.tl.functions.channels import EditAdminRequest, UpdateUsernameRequest
 from telethon.tl.functions.chatlists import JoinChatlistInviteRequest, CheckChatlistInviteRequest, LeaveChatlistRequest
 from telethon.errors import ChatAdminRequiredError, MessageNotModifiedError, FloodWaitError, UsernameOccupiedError
 
@@ -112,6 +110,10 @@ class App:
         await utils.loop_wrapper(wrapper, sleep_time)
 
     async def refresh_admins(self):
+        settings = await models.Settings.objects.aget()
+        chat_invite_info: ChatInviteAlready = await self.client(CheckChatInviteRequest(settings.userbots_chat_invite))
+        await self.client(GetFullChatRequest(chat_invite_info.chat.id))
+
         async for channel in models.Channel.objects.filter(owner=self.userbot):
             async for user in models.UserBot.objects.exclude(phone_number__in=USERBOT_HOST_LIST):
                 privileges = types.TypeChatAdminRights(delete_messages=True, post_messages=True, edit_messages=True, change_info=True)
@@ -137,8 +139,6 @@ class App:
 
     async def setup_account(self):
         await self.client(SetAccountTTLRequest(ttl=AccountDaysTTL(days=720)))
-        if not self.username:
-            await self.client(UpdateAccountUsernameRequest(utils.rand_username('tpg_admin_bot____', 3)))
 
     async def switch_offline(self):
         await self.client(UpdateStatusRequest(offline=False))
@@ -172,7 +172,7 @@ class App:
             new_username = utils.rand_username(channel.username, sl)
             logging.info(f'Updating channel {channel.title} username to {new_username}')
             try:
-                await self.client(UpdateChannelUsernameRequest(channel.v2_id, new_username))
+                await self.client(UpdateUsernameRequest(channel.v2_id, new_username))
                 channel.username = new_username
                 channel.last_username_change = datetime.now(timezone.utc)
                 await channel.asave()
