@@ -1,8 +1,9 @@
 import json
 import logging
+import os
 import random
-import string
-from asyncio import sleep
+from typing import Coroutine, Any
+from asyncio import sleep, gather, create_task
 from datetime import datetime, timedelta, timezone, date as date_t
 from telethon import TelegramClient, types
 from telethon.errors import FloodWaitError
@@ -26,7 +27,18 @@ async def loop_wrapper(func, sleep_time, *args, **kwargs):
             raise
         except Exception as e:
             logging.critical(e)
-            await sleep(60 * 5)
+            raise
+
+
+async def gather_coroutines(coroutines: list[Coroutine[Any, Any, Any]]):
+    tasks = []
+    try:
+        tasks = [create_task(coro) for coro in coroutines]
+        await gather(*tasks)
+    except ConnectionError:
+        for task in tasks:
+            task.cancel()
+        raise
 
 
 async def is_username_change_unlocked(channel: models.Channel):
@@ -69,7 +81,7 @@ class LanguageStats:
     def __init__(self):
         self.today = datetime.now(timezone.utc).date()
         self.restrictions: dict[str, int] = {}  # {'English': 1000, 'Russian': -5} (minus means percentage)
-        self.data: dict[date_t: dict[str, int]] = {}  # {'2021-01-21': {'English': 1000, 'Russian': 500}}
+        self.data: dict[date_t, dict[str, int]] = {}  # {'2021-01-21': {'English': 1000, 'Russian': 500}}
 
     def get_languages_graph_views(self, graphs, days=7):
         data = json.loads(graphs[0].json.data)
@@ -108,13 +120,18 @@ class LanguageStats:
         return sum(value for lang, value in self.data[date].items() if lang not in self.restrictions)
 
 
-async def rand_username(username):
-    sl = (await models.Settings.objects.aget()).username_suffix_length or 1
-    base = username[:-sl]
-    while True:
-        new_username = base + ''.join(random.choices(string.digits, k=sl))
-        if new_username != username:
-            return new_username
+def rand_username(username: str, suffix_len: int):
+    base = username[:-suffix_len]
+
+    # generate a number with zero-padding (e.g., 004, 129, 873)
+    num = random.randrange(10**suffix_len)
+    new_username = f'{base}{num:0{suffix_len}d}'
+
+    if new_username == username:
+        num = (num + 1) % (10**suffix_len)
+        new_username = f'{base}{num:0{suffix_len}d}'
+
+    return new_username
 
 
 def init_logger(number):
@@ -129,3 +146,7 @@ def day_start(date: datetime = None):
     if date is None:
         date = datetime.now(timezone.utc)
     return datetime(date.year, date.month, date.day, tzinfo=timezone.utc)
+
+
+def remove_file(filename):
+    os.remove(filename)

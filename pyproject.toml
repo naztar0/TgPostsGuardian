@@ -1,0 +1,21 @@
+[project]
+name = "tgpostsguardian"
+version = "2.0.0"
+description = ""
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "asgiref~=3.11.0",
+    "babel~=2.17.0",
+    "channels~=4.3.2",
+    "django~=6.0.0",
+    "django-modeladmin-reorder~=0.3.1",
+    "django-solo~=2.4.0",
+    "envparse~=0.2.0",
+    "mkdocs~=1.6.1",
+    "psycopg[binary]>=3.3.2",
+    "python-dotenv~=1.2.1",
+    "rsa~=4.9.1",
+    "telethon~=1.42.0",
+    "tgcrypto~=1.2.5",
+]

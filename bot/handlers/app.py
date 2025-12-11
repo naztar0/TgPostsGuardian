@@ -3,38 +3,34 @@ import json
 from io import BytesIO
 from contextlib import suppress
 from datetime import datetime, timedelta, timezone
-from asyncio import sleep, gather, create_task
+from asyncio import sleep
 
 from django.db.models import Q
 from channels.db import database_sync_to_async
 
 from telethon import TelegramClient, types, events
-from telethon.types import ChannelParticipantsAdmins, InputPeerChannel, InputChannel, MessageMediaPhoto
+from telethon.types import InputPeerChannel, MessageMediaPhoto
 from telethon.tl.custom import Message
-from telethon.tl.types import DialogFilterChatlist, InputChatlistDialogFilter, ChatInviteAlready
+from telethon.tl.types import DialogFilterChatlist, InputChatlistDialogFilter, ChatInviteAlready, AccountDaysTTL
 from telethon.tl.types.messages import DialogFilters
 from telethon.tl.types.chatlists import ChatlistInvite
-from telethon.tl.types.channels import ChannelParticipants
-from telethon.tl.functions.messages import GetDialogFiltersRequest, GetFullChatRequest, ImportChatInviteRequest, CheckChatInviteRequest
-from telethon.tl.functions.channels import GetParticipantsRequest, EditAdminRequest, UpdateUsernameRequest
+from telethon.tl.functions.account import UpdateStatusRequest, SetAccountTTLRequest
+from telethon.tl.functions.messages import GetDialogFiltersRequest, ImportChatInviteRequest, CheckChatInviteRequest, GetFullChatRequest
+from telethon.tl.functions.channels import EditAdminRequest, UpdateUsernameRequest
 from telethon.tl.functions.chatlists import JoinChatlistInviteRequest, CheckChatlistInviteRequest, LeaveChatlistRequest
 from telethon.errors import ChatAdminRequiredError, MessageNotModifiedError, FloodWaitError, UsernameOccupiedError
 
-from app.settings import BASE_DIR, API_ID, API_HASH, USERBOT_PN_LIST, USERBOT_HOST_LIST, MAX_SLEEP_TIME
+from app.settings import SESSIONS_DIR, API_ID, API_HASH, USERBOT_PN_LIST, USERBOT_HOST_LIST, MAX_SLEEP_TIME
 from bot import models, utils
 from bot.types import Log, Limitation, UsernameChangeReason
 from bot.utils_lib.stats import get_stats_with_graphs
 
 
 class App:
-    def __init__(self, phone_number: str, host: int, func: int = 0):
-        if host:
-            name = f'{phone_number}-host-{host}-func-{func}'
-            self.n = USERBOT_HOST_LIST.index(phone_number)
-        else:
-            name = phone_number
-            self.n = USERBOT_PN_LIST.index(phone_number)
-        self.client = TelegramClient(f'{BASE_DIR}/sessions/{name}', API_ID, API_HASH, receive_updates=func == 1)
+    def __init__(self, phone_number: str, host: bool, func: int = 0):
+        self.session = (f'{phone_number}-host-{int(host)}-func-{func}' if host else phone_number) + '.session'
+        self.n = USERBOT_HOST_LIST.index(phone_number) if host else USERBOT_PN_LIST.index(phone_number)
+        self.client = TelegramClient(SESSIONS_DIR / self.session, API_ID, API_HASH, receive_updates=func == 1)
         self.phone_number = phone_number
         self.host = host
         self.userbot: models.UserBot | None = None
@@ -59,11 +55,11 @@ class App:
             logging.warning(f'Phone number mismatch: specified {self.phone_number}, actual {phone}')
             self.phone_number = phone
 
+    def remove_session(self):
+        utils.remove_file(SESSIONS_DIR / self.session)
+
     async def start(self):
-        while True:
-            with suppress(ConnectionError):
-                await self.run_until_disconnected()
-            await sleep(60)
+        await self.run_until_disconnected()
 
     async def run_until_disconnected(self):
         # noinspection PyUnresolvedReferences
@@ -75,47 +71,37 @@ class App:
         settings = await database_sync_to_async(models.Settings.objects.get)()
 
         if not self.host or self.func == 1:
+            await self.setup_account()
             await self.refresh_me()
         if self.func == 1:
             self.client.add_event_handler(
-                self.update_username_message_handler,
-                events.NewMessage(incoming=True, pattern=r'^UPDATE_USERNAME (?P<data>.+)$')
-            )
-            self.client.add_event_handler(
-                self.make_post_message_handler,
-                events.NewMessage(incoming=True, pattern=r'^MAKE_POST (?P<data>.+)$')
-            )
-            self.client.add_event_handler(
-                self.publish_post_message_handler,
-                events.NewMessage(incoming=True, pattern=r'^PUBLISH_POST (?P<data>.+)$')
+                self.bot_action_handler,
+                events.NewMessage(incoming=True, pattern=r'^ACTION (?P<data>.+)$')
             )
         self.userbot = await models.UserBot.objects.aget(phone_number=self.phone_number)
 
         if self.host:
             if self.func == 1:
+                # noinspection PyUnresolvedReferences
                 await self.client.run_until_disconnected()
             elif self.func == 2:
                 await self.start_jobs(
+                    ('switch_offline', 60),
                     ('join_channels', 60 * 5),
+                    ('refresh_admins', 60 * 5),
                     ('check_post_deletions', settings.check_post_deletions_interval),
                     ('check_lang_stats', settings.check_stats_interval),
                     ('delete_old_posts', settings.delete_old_posts_interval * 60)
                 )
         else:
             await self.start_jobs(
+                ('switch_offline', 60),
                 ('join_channels', 60 * 5),
                 ('check_post_views', settings.check_post_views_interval)
             )
 
     async def start_jobs(self, *jobs: tuple[str, int]):
-        tasks = []
-        try:
-            tasks = [create_task(self.loop_wrapper(getattr(self, job), interval)) for job, interval in jobs]
-            await gather(*tasks)
-        except ConnectionError:
-            for task in tasks:
-                task.cancel()
-            raise
+        await utils.gather_coroutines([self.loop_wrapper(getattr(self, job), interval) for job, interval in jobs])
 
     async def loop_wrapper(self, func, sleep_time, *args, **kwargs):
         async def wrapper():
@@ -123,36 +109,18 @@ class App:
             await func(*args, **kwargs)
         await utils.loop_wrapper(wrapper, sleep_time)
 
-    async def refresh(self):
-        async for user in models.UserBot.objects.all():
-            if user.phone_number not in USERBOT_HOST_LIST and user.phone_number not in USERBOT_PN_LIST:
-                await user.adelete()
-
+    async def refresh_admins(self):
         settings = await models.Settings.objects.aget()
         chat_invite_info: ChatInviteAlready = await self.client(CheckChatInviteRequest(settings.userbots_chat_invite))
         await self.client(GetFullChatRequest(chat_invite_info.chat.id))
 
-        if not self.userbot:
-            self.userbot = await models.UserBot.objects.aget(phone_number=self.phone_number)
         async for channel in models.Channel.objects.filter(owner=self.userbot):
-            peer = await self.client.get_input_entity(channel.v2_id)
-            peer = InputChannel(peer.channel_id, peer.access_hash)
-            cp: ChannelParticipants = await self.client(
-                GetParticipantsRequest(
-                    channel=peer,
-                    filter=ChannelParticipantsAdmins(),
-                    offset=0,
-                    limit=100,
-                    hash=0
-                )
-            )
-            admins = [admin.user_id for admin in cp.participants]
-            async for user in models.UserBot.objects.all():
-                if user.phone_number not in USERBOT_HOST_LIST and user.user_id not in admins:
-                    privileges = types.TypeChatAdminRights(delete_messages=True, post_messages=True, edit_messages=True, change_info=True)
-                    await self.client(EditAdminRequest(channel.v2_id, user.user_id, privileges, ''))
-                    logging.info(f'Promoted {user.user_id} to admin in {channel.title}')
-                    await sleep(1)
+            async for user in models.UserBot.objects.exclude(phone_number__in=USERBOT_HOST_LIST):
+                privileges = types.TypeChatAdminRights(delete_messages=True, post_messages=True, edit_messages=True, change_info=True)
+                # noinspection PyTypeChecker
+                await self.client(EditAdminRequest(channel.v2_id, user.user_id, privileges, ''))
+                logging.info(f'Promoted {user.user_id} to admin in {channel.title}')
+                await sleep(1)
 
     async def refresh_channel(self, channel: models.Channel):
         channel_api: types.Channel = await self.client.get_entity(channel.v2_id)
@@ -168,6 +136,14 @@ class App:
             'last_name': self.last_name,
             'phone_number': self.phone_number,
         })
+
+    async def setup_account(self):
+        await self.client(SetAccountTTLRequest(ttl=AccountDaysTTL(days=720)))
+
+    async def switch_offline(self):
+        await self.client(UpdateStatusRequest(offline=False))
+        await sleep(1)
+        await self.client(UpdateStatusRequest(offline=True))
 
     async def join_channels(self):
         settings = await models.Settings.objects.aget()
@@ -191,8 +167,9 @@ class App:
             logging.info(f'Joined {len(channels)} channels: {", ".join([channel.title for channel in channels])}')
 
     async def change_username(self, channel: models.Channel, reason, comment, ignore_wait=False):
+        sl = (await models.Settings.objects.aget()).username_suffix_length or 1
         for _ in range(3):
-            new_username = await utils.rand_username(channel.username)
+            new_username = utils.rand_username(channel.username, sl)
             logging.info(f'Updating channel {channel.title} username to {new_username}')
             try:
                 await self.client(UpdateUsernameRequest(channel.v2_id, new_username))
@@ -223,15 +200,16 @@ class App:
                 )
                 if not ignore_wait:
                     await sleep(min(e.seconds, MAX_SLEEP_TIME))
-                return
+                return None
             except Exception as e:
                 logging.critical(e)
                 if not ignore_wait:
                     await sleep(60)
+        return None
 
     async def change_username_by_limit(self, channel: models.Channel, reason: str, comment: str, events_count: int, events_limit: int):
         if not await utils.is_username_change_unlocked(channel):
-            return
+            return None
         daily_username_changes_count = await models.Log.objects.filter(
             channel=channel, type=Log.USERNAME_CHANGE, success=True, created__gte=utils.day_start()
         ).acount()
@@ -240,11 +218,11 @@ class App:
         ).order_by('-created').afirst()
         daily_exceeded = ((excess.value if excess else 0) + daily_username_changes_count) * events_limit
         if daily_exceeded >= events_count:
-            return
+            return None
         total_exceeded = (events_count - daily_exceeded) // events_limit
         logging.info(f'Daily username changes {daily_username_changes_count}, daily exceeded {daily_exceeded}, total exceeded {total_exceeded}')
         if total_exceeded == 0:
-            return
+            return None
         new_excess = total_exceeded - 1
         if new_excess > 0:
             if excess:
@@ -261,10 +239,17 @@ class App:
         if (await models.Settings.objects.aget()).individual_allocations:
             channels_count = await channels.acount()
             userbot_count = await models.UserBot.objects.acount()
+            if channels_count == 0 or userbot_count == 0:
+                return None
             if userbot_count <= channels_count:
-                channels.query.set_limits(self.n, userbot_count)
+                # split channels as evenly as possible between bots
+                low = (self.n * channels_count) // userbot_count
+                high = ((self.n + 1) * channels_count) // userbot_count
             else:
-                channels.query.set_limits(self.n % channels_count, 1)
+                # more bots than channels: assign one channel per bot, cycling
+                low = self.n % channels_count
+                high = low + 1
+            channels.query.set_limits(low, high)
         return channels
 
     async def check_post_deletions(self):
@@ -296,110 +281,122 @@ class App:
             await sleep(5)
 
     async def check_post_views(self):
-        now = datetime.now(timezone.utc)
-        async for channel in await self.get_channels():
-            logging.info(f'Checking channel {channel.channel_id}')
-            single_messages: list[types.Message] = []
-            grouped_messages: dict[int, list[types.Message]] = {}
-            limitations = [x async for x in models.Limitation.objects.filter(
-                channel=channel, type=Limitation.POST_VIEWS
-            ).order_by('-created')]
-            async for message in self.client.iter_messages(channel.v2_id):
-                message: types.Message
-                message.date = message.date.replace(tzinfo=timezone.utc)
-                if message.date.date() < now.date() - timedelta(days=channel.history_days_limit):
-                    break
-                if not message.views:
-                    continue
-                logging.info(f'Found views {message.views}')
-                for limitation in limitations:
-                    logging.info(f'Checking limitation {limitation.start} - {limitation.end}, post date {message.date.date()}')
-                    if limitation.start <= message.date.date() <= limitation.end:
-                        skip = False
-                        for lim in limitations:
-                            if (
-                                lim.start <= message.date.date() <= lim.end and lim.priority < limitation.priority and
-                                bool(lim.views) == bool(limitation.views) and
-                                bool(lim.views_difference) == bool(limitation.views_difference)
-                            ):
-                                logging.info(f'Skipping limitation {limitation.start} - {limitation.end} with priority {limitation.priority} '
-                                             f'because it is inside {lim.start} - {lim.end} with priority {lim.priority}')
-                                skip = True
-                                break
-                        if skip:
-                            continue
-                        if limitation.views and message.views > limitation.views:
-                            logging.info(f'Found views {message.views} more than limitation {limitation.views}')
-                            if message.grouped_id and channel.delete_albums:
-                                if message.grouped_id not in grouped_messages:
-                                    grouped_messages[message.grouped_id] = await utils.collect_media_group(self.client, message)
-                            else:
-                                single_messages.append(message)
-                        if limitation.views_difference:
-                            logging.info(f'Checking views difference {limitation.views_difference}')
-                            if post := await models.PostCheck.objects.filter(channel=channel, post_id=message.id).afirst():
-                                if post.last_check < now - timedelta(minutes=limitation.views_difference_interval) \
-                                        and (message.views - post.views) * 100 / post.views > limitation.views_difference:
-                                    logging.info(f'Found views difference {limitation.views_difference}')
-                                    if message.grouped_id and channel.delete_albums:
-                                        if message.grouped_id not in grouped_messages:
-                                            grouped_messages[message.grouped_id] = await utils.collect_media_group(self.client, message)
-                                    else:
-                                        single_messages.append(message)
-                                    post.last_check = now
-                                    await post.asave()
-                            else:
-                                await models.PostCheck.objects.acreate(post_date=message.date, post_id=message.id, views=message.views)
+        channels = await self.get_channels()
+        if channels is None:
+            return
+        chunk, offset = 5, 0
+        channels = [x async for x in channels]
+        while offset < len(channels):
+            await utils.gather_coroutines([
+                self.check_channel_post_views(channel)
+                for channel in channels[offset:offset + chunk]
+            ])
+            offset += chunk
 
-            logging.info(f'Found {len(single_messages)} single messages and {len(grouped_messages)} grouped messages')
-            for message in single_messages:
-                await models.Log.objects.acreate(
-                    type=Log.DELETION,
-                    userbot=self.userbot,
-                    channel=channel,
-                    post_id=message.id,
-                    post_date=message.date,
-                    post_views=message.views,
-                )
-                if channel.republish_today_posts and message.date.date() == now.date():
-                    if channel.has_protected_content:
-                        if isinstance(message.media, MessageMediaPhoto):
-                            # noinspection PyTypeChecker
-                            photo: BytesIO = await self.client.download_media(message, bytes)
-                            await self.client.send_message(channel.v2_id, message.message, file=photo)
-                        elif message.message:
-                            await self.client.send_message(channel.v2_id, message.message)
-                    else:
-                        await self.client.send_message(channel.v2_id, message)
-                    await sleep(1)
-                await self.client.delete_messages(channel.v2_id, message.id)
-                await sleep(1)
-            for grouped_message in grouped_messages.values():
-                await models.Log.objects.acreate(
-                    type=Log.DELETION,
-                    userbot=self.userbot,
-                    channel=channel,
-                    post_id=grouped_message[0].id,
-                    post_date=grouped_message[0].date,
-                    post_views=grouped_message[0].views,
-                )
-                if channel.republish_today_posts and grouped_message[0].date.date() == now.date():
-                    if channel.has_protected_content:
-                        # send only first photo from group
-                        photo_msgs: list[types.Message] = list(filter(lambda x: x.photo, grouped_message))
+    async def check_channel_post_views(self, channel):
+        now = datetime.now(timezone.utc)
+        logging.info(f'Checking channel {channel.channel_id}')
+        single_messages: list[types.Message] = []
+        grouped_messages: dict[int, list[types.Message]] = {}
+        limitations = [x async for x in models.Limitation.objects.filter(
+            channel=channel, type=Limitation.POST_VIEWS
+        ).order_by('-created')]
+        async for message in self.client.iter_messages(channel.v2_id):
+            message: types.Message
+            message.date = message.date.replace(tzinfo=timezone.utc)
+            if message.date.date() < now.date() - timedelta(days=channel.history_days_limit):
+                break
+            if not message.views:
+                continue
+            logging.info(f'Found views {message.views}')
+            for limitation in limitations:
+                logging.info(f'Checking limitation {limitation.start} - {limitation.end}, post date {message.date.date()}')
+                if limitation.start <= message.date.date() <= limitation.end:
+                    skip = False
+                    for lim in limitations:
+                        if (
+                            lim.start <= message.date.date() <= lim.end and lim.priority < limitation.priority and
+                            bool(lim.views) == bool(limitation.views) and
+                            bool(lim.views_difference) == bool(limitation.views_difference)
+                        ):
+                            logging.info(f'Skipping limitation {limitation.start} - {limitation.end} with priority {limitation.priority} '
+                                         f'because it is inside {lim.start} - {lim.end} with priority {lim.priority}')
+                            skip = True
+                            break
+                    if skip:
+                        continue
+                    if limitation.views and message.views > limitation.views:
+                        logging.info(f'Found views {message.views} more than limitation {limitation.views}')
+                        if message.grouped_id and channel.delete_albums:
+                            if message.grouped_id not in grouped_messages:
+                                grouped_messages[message.grouped_id] = await utils.collect_media_group(self.client, message)
+                        else:
+                            single_messages.append(message)
+                    if limitation.views_difference:
+                        logging.info(f'Checking views difference {limitation.views_difference}')
+                        if post := await models.PostCheck.objects.filter(channel=channel, post_id=message.id).afirst():
+                            if post.last_check < now - timedelta(minutes=limitation.views_difference_interval) \
+                                    and (message.views - post.views) * 100 / post.views > limitation.views_difference:
+                                logging.info(f'Found views difference {limitation.views_difference}')
+                                if message.grouped_id and channel.delete_albums:
+                                    if message.grouped_id not in grouped_messages:
+                                        grouped_messages[message.grouped_id] = await utils.collect_media_group(self.client, message)
+                                else:
+                                    single_messages.append(message)
+                                post.last_check = now
+                                await post.asave()
+                        else:
+                            await models.PostCheck.objects.acreate(post_date=message.date, post_id=message.id, views=message.views)
+
+        logging.info(f'Found {len(single_messages)} single messages and {len(grouped_messages)} grouped messages')
+        for message in single_messages:
+            await models.Log.objects.acreate(
+                type=Log.DELETION,
+                userbot=self.userbot,
+                channel=channel,
+                post_id=message.id,
+                post_date=message.date,
+                post_views=message.views,
+            )
+            if channel.republish_today_posts and message.date.date() == now.date():
+                if channel.has_protected_content:
+                    if isinstance(message.media, MessageMediaPhoto):
                         # noinspection PyTypeChecker
-                        photo: BytesIO = await self.client.download_media(photo_msgs[0], bytes) if photo_msgs else None
-                        caption_msgs: list[types.Message] = list(filter(lambda x: x.message, grouped_message))
-                        caption = caption_msgs[0].message if caption_msgs else ''
-                        if photo:
-                            await self.client.send_message(channel.v2_id, caption, file=photo)
-                        elif caption:
-                            await self.client.send_message(channel.v2_id, caption)
-                    else:
-                        await self.client.send_message(channel.v2_id, grouped_message[0])
+                        photo: BytesIO = await self.client.download_media(message, bytes)
+                        await self.client.send_message(channel.v2_id, message.message, file=photo)
+                    elif message.message:
+                        await self.client.send_message(channel.v2_id, message.message)
+                else:
+                    await self.client.send_message(channel.v2_id, message)
                 await sleep(1)
-                await self.client.delete_messages(channel.v2_id, [message.id for message in grouped_message])
-                await sleep(1)
+            await self.client.delete_messages(channel.v2_id, message.id)
+            await sleep(1)
+        for grouped_message in grouped_messages.values():
+            await models.Log.objects.acreate(
+                type=Log.DELETION,
+                userbot=self.userbot,
+                channel=channel,
+                post_id=grouped_message[0].id,
+                post_date=grouped_message[0].date,
+                post_views=grouped_message[0].views,
+            )
+            if channel.republish_today_posts and grouped_message[0].date.date() == now.date():
+                if channel.has_protected_content:
+                    # send only first photo from group
+                    photo_msgs: list[types.Message] = list(filter(lambda x: x.photo, grouped_message))
+                    # noinspection PyTypeChecker
+                    photo: BytesIO = await self.client.download_media(photo_msgs[0], bytes) if photo_msgs else None
+                    caption_msgs: list[types.Message] = list(filter(lambda x: x.message, grouped_message))
+                    caption = caption_msgs[0].message if caption_msgs else ''
+                    if photo:
+                        await self.client.send_message(channel.v2_id, caption, file=photo)
+                    elif caption:
+                        await self.client.send_message(channel.v2_id, caption)
+                else:
+                    await self.client.send_message(channel.v2_id, grouped_message[0])
+            await sleep(1)
+            await self.client.delete_messages(channel.v2_id, [message.id for message in grouped_message])
+            await sleep(1)
 
     async def handle_view_limitation(self, channel, current_views, max_views, hourly_distribution):
         if hourly_distribution:
@@ -434,8 +431,11 @@ class App:
         return False
 
     async def check_lang_stats(self):
+        channels = await self.get_channels(owner=True)
+        if channels is None:
+            return
         today = datetime.now(timezone.utc).date()
-        async for channel in await self.get_channels(owner=True):
+        async for channel in channels:
             logging.info(f'Checking channel lang stats {channel.title} ({channel.channel_id})')
             try:
                 stats, graphs = await get_stats_with_graphs(self.client, channel.v2_id, ['languages_graph'])
@@ -509,24 +509,39 @@ class App:
                             break
             await sleep(3)
 
-    async def update_username_message_handler(self, event: Message | events.NewMessage.Event):
-        data: dict = json.loads(event.pattern_match['data'])  # {'channel_id': 1}
+    async def bot_action_handler(self, event: Message | events.NewMessage.Event):
+        data: dict = json.loads(event.pattern_match['data'])  # {'action': 'update_username', ...}
 
+        response = None
+
+        match data['action']:
+            case 'update_username':
+                response = await self.update_username_message_handler(data, event.sender_id)
+            case 'make_post':
+                response = await self.make_post_message_handler(data)
+            case 'publish_post':
+                response = await self.publish_post_message_handler(data)
+            case _:
+                logging.error(f'Unknown action {data['action']}')
+
+        if response:
+            await event.respond(response)
+
+    async def update_username_message_handler(self, data: dict, sender: int):  # {'channel_id': 1}
         channel_id_v2 = data['channel_id']
         channel_id_v1 = abs(int(str(channel_id_v2)[3:]))
 
         username = None
-        comment = f'Request from {event.sender_id}'
+        comment = f'Request from {sender}'
         channel = await database_sync_to_async(models.Channel.objects.get)(channel_id=channel_id_v1)
 
         if await utils.is_username_change_unlocked(channel):
             username = await self.change_username(channel, UsernameChangeReason.THIRD_PARTY_REQUEST, comment, ignore_wait=True)
 
         result = json.dumps({'channel_id': channel_id_v2, 'username': username or channel.username})
-        await event.respond(f'/update_username {result}')
+        return f'/update_username {result}'
 
-    async def make_post_message_handler(self, event: Message | events.NewMessage.Event):
-        data: dict = json.loads(event.pattern_match['data'])  # {'album_ids': [1, 2, 3], 'text_id': 1, 'bot_user_id': 1}
+    async def make_post_message_handler(self, data: dict):  # {'album_ids': [1, 2, 3], 'text_id': 1, 'bot_user_id': 1}
         settings = await database_sync_to_async(models.Settings.objects.get)()
 
         album_messages = await self.client.get_messages(settings.archive_channel, ids=data['album_ids']) if data.get('album_ids') else None
@@ -548,10 +563,9 @@ class App:
                 )
 
         result = json.dumps({'message_ids': result_ids, 'bot_user_id': data['bot_user_id']})
-        await event.respond(f'/make_post {result}')
+        return f'/make_post {result}'
 
-    async def publish_post_message_handler(self, event: Message | events.NewMessage.Event):
-        data: dict = json.loads(event.pattern_match['data'])  # {'message_ids': [1, 2, 3], 'channel_id': 1, 'ad_id': 1}
+    async def publish_post_message_handler(self, data: dict):  # {'message_ids': [1, 2, 3], 'channel_id': 1, 'ad_id': 1}
         settings = await database_sync_to_async(models.Settings.objects.get)()
 
         messages = await self.client.get_messages(settings.archive_channel, ids=data['message_ids'])
@@ -572,4 +586,4 @@ class App:
                 )
 
         result = json.dumps({'message_ids': result_ids, 'ad_id': data['ad_id']})
-        await event.respond(f'/publish_post {result}')
+        return f'/publish_post {result}'

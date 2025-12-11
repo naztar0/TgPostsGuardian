@@ -1,6 +1,6 @@
 import os
 import logging
-import pytz
+from pathlib import Path
 from envparse import env
 from dotenv import load_dotenv
 from django.utils.translation import gettext_lazy as _
@@ -9,9 +9,7 @@ LOG_LEVEL = env.str('LOG_LEVEL', default='INFO')
 DEBUG = LOG_LEVEL == 'DEBUG'
 logging.basicConfig(level=LOG_LEVEL)
 
-local_tz = pytz.timezone('Europe/Kiev')
-
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = Path(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 load_dotenv()
 
 SECRET_KEY = env.str('SECRET_KEY')
@@ -25,11 +23,11 @@ WEBAPP_PORT = env.int('WEBAPP_PORT', default=8080)
 WEBHOOK_DOMAIN = env.str('WEBHOOK_DOMAIN', default='example.com')
 BASE_ADMIN_PATH = f'https://{WEBHOOK_DOMAIN}'
 
-MYSQL_HOST = env.str('MYSQL_HOST', default='localhost')
-MYSQL_PORT = env.int('MYSQL_PORT', default=3306)
-MYSQL_PASSWORD = env.str('MYSQL_PASSWORD', default='')
-MYSQL_USER = env.str('MYSQL_USER', default='')
-MYSQL_DB = env.str('MYSQL_DB', default='')
+POSTGRESQL_HOST = env.str('POSTGRESQL_HOST', default='localhost')
+POSTGRESQL_PORT = env.int('POSTGRESQL_PORT', default=5432)
+POSTGRESQL_PASSWORD = env.str('POSTGRESQL_PASSWORD', default='')
+POSTGRESQL_USER = env.str('POSTGRESQL_USER', default='')
+POSTGRESQL_DB = env.str('POSTGRESQL_DB', default='')
 
 BOT_ADMINS = env.list('BOT_ADMINS', default=0)
 
@@ -83,7 +81,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            os.path.join(BASE_DIR, 'templates'),
+            BASE_DIR / 'templates',
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -101,15 +99,12 @@ WSGI_APPLICATION = 'app.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': MYSQL_DB,
-        'USER': MYSQL_USER,
-        'PASSWORD': MYSQL_PASSWORD,
-        'HOST': MYSQL_HOST,
-        'PORT': MYSQL_PORT,
-        'OPTIONS': {
-            'charset': 'utf8mb4',
-        },
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': POSTGRESQL_DB,
+        'USER': POSTGRESQL_USER,
+        'PASSWORD': POSTGRESQL_PASSWORD,
+        'HOST': POSTGRESQL_HOST,
+        'PORT': POSTGRESQL_PORT,
     }
 }
 
@@ -143,13 +138,14 @@ USE_TZ = True
 
 CONSTANCE_BACKEND = 'constance.backends.database.DatabaseBackend'
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT = BASE_DIR / 'static'
 STATIC_URL = '/static/'
 
-STATICFILES_DIRS = (os.path.join(BASE_DIR, 'staticfiles'),)
+STATICFILES_DIRS = (BASE_DIR / 'staticfiles',)
 
-LOCALE_PATHS = (os.path.join(BASE_DIR, 'locale'),)
+LOCALE_PATHS = (BASE_DIR / 'locale',)
 
+SESSIONS_DIR = Path('/usr/sessions')
 
 ADMIN_REORDER = [
     {

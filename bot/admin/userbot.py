@@ -12,7 +12,7 @@ class UserBotAdmin(admin.ModelAdmin):
 
     def username_custom(self, obj):
         if obj.username:
-            return format_html(f'<a href="tg://resolve?domain={obj.username}">@{obj.username}</a>')
+            return format_html('<a href="tg://resolve?domain={username}">@{username}</a>', username=obj.username)
         else:
             return '-'
     username_custom.short_description = _('@username')
