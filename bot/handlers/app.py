@@ -34,7 +34,8 @@ class App:
         self.phone_number = phone_number
         self.host = host
         self.userbot: models.UserBot | None = None
-        self.channels = []
+        self.channels: list[models.Channel] = []
+        self.last_channels_update = datetime.min
         self.func = func
 
         self.username = None
@@ -233,6 +234,8 @@ class App:
         return await self.change_username(channel, reason, comment)
 
     async def get_channels(self, owner=False):
+        if datetime.now() - self.last_channels_update < timedelta(minutes=3):
+            return self.channels
         channels = models.Channel.objects.all()
         if owner:
             channels = channels.filter(owner=self.userbot)
@@ -250,7 +253,10 @@ class App:
                 low = self.n % channels_count
                 high = low + 1
             channels.query.set_limits(low, high)
-        return channels
+        self.last_channels_update = datetime.now()
+        self.channels = [x async for x in channels]
+        await self.userbot.channels.aset(channels)
+        return self.channels
 
     async def check_post_deletions(self):
         now = datetime.now(timezone.utc)
@@ -282,10 +288,7 @@ class App:
 
     async def check_post_views(self):
         channels = await self.get_channels()
-        if channels is None:
-            return
         chunk, offset = 5, 0
-        channels = [x async for x in channels]
         while offset < len(channels):
             await utils.gather_coroutines([
                 self.check_channel_post_views(channel)
@@ -432,10 +435,8 @@ class App:
 
     async def check_lang_stats(self):
         channels = await self.get_channels(owner=True)
-        if channels is None:
-            return
         today = datetime.now(timezone.utc).date()
-        async for channel in channels:
+        for channel in channels:
             logging.info(f'Checking channel lang stats {channel.title} ({channel.channel_id})')
             try:
                 stats, graphs = await get_stats_with_graphs(self.client, channel.v2_id, ['languages_graph'])
