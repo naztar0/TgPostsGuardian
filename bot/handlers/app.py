@@ -12,11 +12,11 @@ from telethon import TelegramClient, types, events
 from telethon.types import InputPeerChannel, MessageMediaPhoto
 from telethon.tl.custom import Message
 from telethon.tl.types import DialogFilterChatlist, InputChatlistDialogFilter, ChatInviteAlready, AccountDaysTTL
-from telethon.tl.types.messages import DialogFilters
+from telethon.tl.types.messages import DialogFilters, Chats
 from telethon.tl.types.chatlists import ChatlistInvite
 from telethon.tl.functions.account import UpdateStatusRequest, SetAccountTTLRequest
 from telethon.tl.functions.messages import GetDialogFiltersRequest, ImportChatInviteRequest, CheckChatInviteRequest, GetFullChatRequest
-from telethon.tl.functions.channels import EditAdminRequest, UpdateUsernameRequest
+from telethon.tl.functions.channels import EditAdminRequest, UpdateUsernameRequest, GetAdminedPublicChannelsRequest
 from telethon.tl.functions.chatlists import JoinChatlistInviteRequest, CheckChatlistInviteRequest, LeaveChatlistRequest
 from telethon.errors import ChatAdminRequiredError, MessageNotModifiedError, FloodWaitError, UsernameOccupiedError
 
@@ -70,16 +70,17 @@ class App:
 
         # first database access should be under sync_to_async to close old connections
         settings = await database_sync_to_async(models.Settings.objects.get)()
+        self.userbot = await models.UserBot.objects.aget(phone_number=self.phone_number)
 
         if not self.host or self.func == 1:
             await self.setup_account()
             await self.refresh_me()
         if self.func == 1:
+            await self.refresh_host_channels()
             self.client.add_event_handler(
                 self.bot_action_handler,
                 events.NewMessage(incoming=True, pattern=r'^ACTION (?P<data>.+)$')
             )
-        self.userbot = await models.UserBot.objects.aget(phone_number=self.phone_number)
 
         if self.host:
             if self.func == 1:
@@ -129,6 +130,19 @@ class App:
         channel.username = channel_api.username
         channel.has_protected_content = channel_api.noforwards
         await channel.asave()
+
+    async def refresh_host_channels(self):
+        db_channels = [x async for x in models.Channel.objects.all()]
+        own_channels: Chats = await self.client(GetAdminedPublicChannelsRequest())
+        own_channels_ids = [x.id for x in own_channels.chats]
+
+        self.channels = [x for x in db_channels if x.channel_id in own_channels_ids]
+        logging.info(f'Own channels: {self.channels}')
+
+        for channel in self.channels:
+            channel.owner = self.userbot
+
+        await models.Channel.objects.abulk_update(self.channels, ['owner'])
 
     async def refresh_me(self):
         await models.UserBot.objects.aupdate_or_create(user_id=self.user_id, defaults={
@@ -257,7 +271,8 @@ class App:
             channels.query.set_limits(low, high)
         self.last_channels_update = datetime.now()
         self.channels = [x async for x in channels]
-        await self.userbot.channels.aset(channels)
+        if channels:
+            await self.userbot.channels.aset(channels)
         return self.channels
 
     async def check_post_deletions(self):
