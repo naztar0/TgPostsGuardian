@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-08-01 03:35+0200\n"
+"POT-Creation-Date: 2025-12-11 00:43+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,46 +18,46 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: .\app\settings.py:156
+#: app/settings.py:153
 msgid "info"
 msgstr "Info"
 
-#: .\app\settings.py:159
+#: app/settings.py:156
 msgid "a_userbots"
 msgstr "👳🏻‍♀ UserBots"
 
-#: .\app\settings.py:163
+#: app/settings.py:160
 msgid "a_logs"
 msgstr "📜 Logs"
 
-#: .\app\settings.py:167
+#: app/settings.py:164
 msgid "a_posts"
 msgstr "📝 Posts"
 
-#: .\app\settings.py:171
+#: app/settings.py:168
 msgid "a_postchecks"
 msgstr "🔍 Post checks"
 
-#: .\app\settings.py:175
+#: app/settings.py:172
 msgid "a_statsviews"
 msgstr "📊 Stats views"
 
-#: .\app\settings.py:179
+#: app/settings.py:176
 msgid "a_excesses"
 msgstr "🌡 Excesses"
 
-#: .\app\settings.py:186
+#: app/settings.py:183
 msgid "management"
 msgstr "Management"
 
-#: .\app\settings.py:189
+#: app/settings.py:186
 msgid "a_channels"
 msgstr "📢 Channels"
 
-#: .\app\settings.py:193
+#: app/settings.py:190
 msgid "a_limitations"
 msgstr "📝 Limitations"
 
-#: .\app\settings.py:197
+#: app/settings.py:194
 msgid "a_settings"
 msgstr "⚙️ Settings"
