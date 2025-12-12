@@ -70,11 +70,13 @@ class App:
 
         # first database access should be under sync_to_async to close old connections
         settings = await database_sync_to_async(models.Settings.objects.get)()
-        self.userbot = await models.UserBot.objects.aget(phone_number=self.phone_number)
 
         if not self.host or self.func == 1:
             await self.setup_account()
             await self.refresh_me()
+
+        self.userbot = await models.UserBot.objects.aget(phone_number=self.phone_number)
+
         if self.func == 1:
             await self.refresh_host_channels()
             self.client.add_event_handler(
