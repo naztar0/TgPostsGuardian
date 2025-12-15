@@ -39,7 +39,7 @@ def listen_codes(numbers: list[str]):
     for number in numbers:
         for file in os.listdir(SESSIONS_DIR):
             if file.startswith(number):
-                logging.info(f'Initializing session for {number}, file: {file}')
+                logging.warning(f'Initializing session for {number}, file: {file}')
                 clients.append(TelegramClient(SESSIONS_DIR / file, API_ID, API_HASH))
                 clients[-1].start(lambda: number)
                 break
@@ -48,7 +48,7 @@ def listen_codes(numbers: list[str]):
 
     for i in range(len(clients)):
         clients[i].add_event_handler(callback, events.NewMessage(777000, func=lambda e: e.message.message, incoming=True))
-    logging.info('Listening codes...')
+    logging.warning('Listening codes...')
 
     loop = asyncio.get_event_loop()
     loop.run_forever()
