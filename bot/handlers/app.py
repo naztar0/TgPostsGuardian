@@ -578,7 +578,7 @@ class App:
     async def check_stats(self):
         limitation_types = [LimitationType.LANGUAGE_STATS, LimitationType.VIEWS_BY_SOURCE_STATS]
         channels = await self.get_channels(limitations__type__in=limitation_types)
-        today = datetime.now(timezone.utc).date()
+        today = utils.day_start()
         for channel in channels:
             logging.info(f'Checking channel stats {channel.title} ({channel.channel_id})')
             try:
