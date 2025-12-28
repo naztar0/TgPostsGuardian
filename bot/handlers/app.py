@@ -595,7 +595,7 @@ class App:
                     (Q(end_date__gte=today) | Q(end_date=None))
                 ).order_by('-created')]
                 for limitation in limitations:
-                    if not utils.is_limitation_highest(limitation, limitations, today):
+                    if not utils.is_limitation_highest(limitation, limitations, today.date()):
                         continue
                     if not utils.is_limitation_activated(limitation, limitations, logged_ids):
                         continue
