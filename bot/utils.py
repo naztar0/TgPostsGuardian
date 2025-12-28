@@ -248,7 +248,7 @@ async def send_username_change_request(
 ):
     request = {
         'action': 'update_username',
-        'channel_id': channel.channel_id,
+        'channel_id': channel.v2_id,
         'limitation_id': limitation.id,
         'reason': reason,
         'comment': comment
