@@ -1,7 +1,8 @@
 import copy
 import yaml
 from django.core.management.base import BaseCommand
-from app.settings import BASE_DIR, USERBOT_PN_LIST, USERBOT_HOST_LIST, HOST_FUNC_COUNT
+from app.settings import BASE_DIR
+from bot import models
 
 
 COMPOSES = [
@@ -10,10 +11,8 @@ COMPOSES = [
 ]
 
 
-def get_service_name(phone: str, host: bool, func: int) -> str:
-    sanitized = ''.join(ch for ch in phone if ch.isdigit())
-    prefix = 'host' if host else 'bot'
-    return f'{prefix}{func}_{sanitized}'
+def get_service_name(phone: str, _id: int) -> str:
+    return f'{_id}_{phone}'
 
 
 def gen_compose(compose: dict):
@@ -24,26 +23,20 @@ def gen_compose(compose: dict):
     services = base.get('services')
     networks = base.get('networks')
 
-    for phone in USERBOT_PN_LIST:
-        service_name = get_service_name(phone, False, 1)
+    numbers = [x.phone_number for x in models.UserBotConfig.objects.filter(is_active=True)]
+
+    sessions = models.UserBotSession.objects \
+        .filter(userbot__phone_number__in=numbers) \
+        .order_by('id') \
+        .select_related('userbot')
+
+    for session in sessions:
+        service_name = get_service_name(session.userbot.phone_number, session.id)
         services[service_name] = copy.deepcopy(bot_base) | {
             'environment': {
-                'PHONE_NUMBER': phone,
-                'HOST': '0',
-                'FUNC': '0',
+                'SESSION_ID': session.id,
             }
         }
-
-    for phone in USERBOT_HOST_LIST:
-        for func in range(HOST_FUNC_COUNT):
-            service_name = get_service_name(phone, True, func + 1)
-            services[service_name] = copy.deepcopy(bot_base) | {
-                'environment': {
-                    'PHONE_NUMBER': phone,
-                    'HOST': '1',
-                    'FUNC': str(func + 1)
-                }
-            }
 
     generated = {
         'services': services,

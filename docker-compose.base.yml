@@ -3,7 +3,6 @@ x-service-base: &service_base
     dockerfile: Dockerfile
   volumes:
     - /srv/tg-posts-guardian/static:/app/static
-    - /srv/tg-posts-guardian/sessions:/usr/sessions
   extra_hosts:
     - 'host.docker.internal:host-gateway'
   networks:

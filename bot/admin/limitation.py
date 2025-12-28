@@ -1,33 +1,34 @@
 from django.contrib import admin
-from django.utils.html import format_html
+from django.urls import reverse
+from django.utils.html import format_html_join, format_html
 from django.utils.translation import gettext_lazy as _
 
 
 class LimitationAdmin(admin.ModelAdmin):
-    list_display = ['created', 'channel_custom', 'type', 'views', 'views_difference', 'lang_stats_restrictions_custom',
-                    'start_date', 'end_date', 'start_after_days', 'end_after_days']
+    list_display = ['title', 'channels', 'type', 'action']
     list_per_page = 25
-
-    search_fields = ['channel', 'channel__title']
-    list_filter = ['type', 'channel__title']
+    date_hierarchy = 'created'
+    list_filter = ['type', 'action']
 
     fieldsets = [
-        (_('parameters'), {'fields': ['channel', 'type', 'views', 'views_difference', 'views_difference_interval',
-                                      'lang_stats_restrictions', 'hourly_distribution', 'start_date', 'end_date',
-                                      'start_after_days', 'end_after_days']}),
+        (_('parameters'), {'fields': ['title', 'type', 'action', 'hourly_distribution', 'views_difference_interval']}),
+        (_('posts_views_restrictions'), {'fields': ['views', 'views_difference'], 'classes': ['posts_views']}),
+        (_('stats_restrictions'), {'fields': ['stats_restrictions'], 'classes': ['stats_views']}),
+        (_('validity_scope'), {'fields': ['start_date', 'end_date', 'start_after_days', 'end_after_days',
+                                          'start_after_limitation', 'end_after_limitation']}),
     ]
 
-    def channel_custom(self, obj):
-        if obj.channel:
-            return format_html('<a href="/bot/channel/?q={channel_id}">{title}</a>',
-                               channel_id=obj.channel.channel_id, title=obj.channel.title)
-        else:
+    def channels(self, obj):
+        items = format_html_join(
+            '',
+            '<li><a href="{}">{}</a></li>',
+            ((reverse('admin:bot_channel_change', args=[x.channel_id]), x.title)
+             for x in obj.channel_set.all())
+        )
+        if not items:
             return '-'
-    channel_custom.short_description = _('channel')
-
-    def lang_stats_restrictions_custom(self, obj):
-        return obj.lang_stats_restrictions or '-'
-    lang_stats_restrictions_custom.short_description = _('lang_stats_restrictions')
+        return format_html('<ol class="compact">{items}</ol>', items=items)
+    channels.short_description = _('channels')
 
     def has_add_permission(self, *args, **kwargs):
         return True
@@ -37,3 +38,6 @@ class LimitationAdmin(admin.ModelAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return True
+
+    class Media:
+        js = ['admin/js/limitation.js']

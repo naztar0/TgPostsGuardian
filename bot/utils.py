@@ -5,10 +5,12 @@ import random
 from typing import Coroutine, Any
 from asyncio import sleep, gather, create_task
 from datetime import datetime, timedelta, timezone, date as date_t
+from django.utils import dateformat
 from telethon import TelegramClient, types
 from telethon.errors import FloodWaitError
 from app.settings import MAX_SLEEP_TIME
 from bot import models
+from bot.types import UsernameChangeReason
 
 
 async def loop_wrapper(func, sleep_time, *args, **kwargs):
@@ -50,7 +52,7 @@ async def is_username_change_unlocked(channel: models.Channel):
 
 
 async def collect_media_group(client: TelegramClient, post: types.Message):
-    grouped_messages = []
+    grouped_messages: list[types.Message] = []
     async for message in client.iter_messages(
         post.peer_id,
         reverse=True,
@@ -77,14 +79,20 @@ def get_media_file_id(message: types.Message):
     return media.file_id
 
 
-class LanguageStats:
+def _get_graph_name(name: str):
+    if not name or not isinstance(name, str):
+        return name
+    return name.replace(' ', '_').lower()
+
+
+class StatsHandler:
     def __init__(self):
         self.today = datetime.now(timezone.utc).date()
         self.restrictions: dict[str, int] = {}  # {'English': 1000, 'Russian': -5} (minus means percentage)
         self.data: dict[date_t, dict[str, int]] = {}  # {'2021-01-21': {'English': 1000, 'Russian': 500}}
 
-    def get_languages_graph_views(self, graphs, days=7):
-        data = json.loads(graphs[0].json.data)
+    def get_graph_views(self, graph, days=7):
+        data = json.loads(graph.json.data)
         now = datetime.now(timezone.utc)
         for x in range(days):
             date = now - timedelta(days=days - 1 - x)
@@ -92,17 +100,17 @@ class LanguageStats:
                 curr = y[-days + x]
                 if date.date() not in self.data:
                     self.data[date.date()] = {}
-                self.data[date.date()][data['names'][y[0]]] = curr
+                self.data[date.date()][_get_graph_name(data['names'][y[0]])] = curr
 
-    def parse_lang_stats_restrictions(self, restrictions: str):
+    def parse_stats_restrictions(self, restrictions: str):
         for restriction in restrictions.split('\n'):
             split = restriction.split()
             if len(split) != 2:
                 continue
-            lang, value = split
+            key, value = split
             if value[-1] == '%':
                 value = '-' + value[:-1]
-            self.restrictions[lang.capitalize()] = int(value)
+            self.restrictions[key.lower()] = int(value)
 
     def get_data(self, date: date_t = None):
         if date is None:
@@ -117,7 +125,19 @@ class LanguageStats:
     def get_others(self, date: date_t = None):
         if date is None:
             date = self.today
-        return sum(value for lang, value in self.data[date].items() if lang not in self.restrictions)
+        return sum(value for key, value in self.data[date].items() if key not in self.restrictions)
+
+
+class MessageData:
+    def __init__(
+            self,
+            limitation: models.Limitation,
+            message: types.Message = None,
+            media_group: list[types.Message] = None
+    ):
+        self.limitation = limitation
+        self.message = message
+        self.media_group = media_group
 
 
 def rand_username(username: str, suffix_len: int):
@@ -150,3 +170,92 @@ def day_start(date: datetime = None):
 
 def remove_file(filename):
     os.remove(filename)
+
+
+def is_limitation_highest(limitation: models.Limitation, limitations: list[models.Limitation], date: date_t = None):
+    if not date:
+        date = datetime.now(timezone.utc).date()
+
+    for lim in limitations:
+        if (
+                lim.type == limitation.type and
+                lim.start <= date <= lim.end and lim.priority < limitation.priority and
+                bool(lim.views) == bool(limitation.views) and
+                bool(lim.views_difference) == bool(limitation.views_difference)
+        ):
+            logging.info(
+                f'Skipping limitation {limitation.title} ({limitation.start} - {limitation.end}) with priority {limitation.priority} '
+                f'because it is inside {lim.title} ({lim.start} - {lim.end}) with priority {lim.priority}')
+            return False
+
+    return True
+
+
+def is_limitation_activated(
+        limitation: models.Limitation,
+        limitations: list[models.Limitation],
+        logged_ids: set[int],
+        checked: set[int] = None
+):
+    if checked is None:
+        checked = set()
+    next_checked = checked | {limitation.id}
+
+    if not limitation.start_after_limitation and not limitation.end_after_limitation:
+        return True
+
+    start, end = None, None
+
+    for lim in limitations:
+        if limitation.start_after_limitation_id == lim.id:
+            start = lim
+        if limitation.end_after_limitation_id == lim.id:
+            end = lim
+
+    if start and start.id == limitation.id:
+        logging.warning(f'Limitation {limitation.title} has itself as "Start trigger", activation is impossible')
+        return False
+    if start and start.id in checked:
+        logging.warning(f'Circular dependency in limitation {start.title}, activation is impossible')
+        return False
+    if end and end.id in checked:
+        logging.warning(f'Circular dependency in limitation {end.title}, activation is impossible')
+        return False
+
+    if start and not is_limitation_activated(start, limitations, logged_ids, next_checked):
+        logging.info(f'Limitation {limitation.title} is not activated because {start.title} is not activated')
+        return False
+    if end and end.id != limitation.id and is_limitation_activated(end, limitations, logged_ids, next_checked):
+        logging.info(f'Limitation {limitation.title} is not activated because {end.title} is activated')
+        return False
+
+    if start and start.id not in logged_ids:
+        logging.info(f'Limitation {limitation.title} is not activated because {start.title} is not logged')
+        return False
+    if end and end.id in logged_ids:
+        logging.info(f'Limitation {limitation.title} is not activated because {end.title} is logged')
+        return False
+
+    return True
+
+
+async def send_username_change_request(
+        client: TelegramClient,
+        channel: models.Channel,
+        limitation: models.Limitation,
+        reason: UsernameChangeReason,
+        comment: str = None
+):
+    request = {
+        'action': 'update_username',
+        'channel_id': channel.channel_id,
+        'limitation_id': limitation.id,
+        'reason': reason,
+        'comment': comment
+    }
+    msg = f'ACTION {json.dumps(request)}'
+    await client.send_message(channel.owner.user_id, msg)
+
+
+def admin_format_dt(dt: datetime):
+    return dateformat.format(dt, 'j M Y G:i')

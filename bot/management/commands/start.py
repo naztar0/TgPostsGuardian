@@ -4,15 +4,13 @@ from django.core.management.base import BaseCommand
 from telethon import errors
 from bot import handlers
 
-phone_number = os.environ['PHONE_NUMBER']
-HOST = os.environ['HOST'] == '1'
-FUNC = int(os.environ['FUNC'])
+session_id = int(os.environ['SESSION_ID'])
 
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        logging.info(f'Starting {phone_number}')
+        logging.info(f'Starting {session_id}')
         try:
-            handlers.main(phone_number, HOST, FUNC)
+            handlers.main(session_id)
         except (errors.BadRequestError, errors.UnauthorizedError) as e:
-            logging.error(f'{phone_number} {e}')
+            logging.error(f'{session_id} {e}')

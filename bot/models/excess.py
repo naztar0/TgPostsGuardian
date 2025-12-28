@@ -1,13 +1,13 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from bot import types
+from bot.models.choices import LOG_TYPES, USERNAME_CHANGE_REASONS
 
 
 class Excess(models.Model):
-    TYPES = ((types.Log.DELETION, _('deletion')), (types.Log.USERNAME_CHANGE, _('username_change')))
     created = models.DateTimeField(_('created_utc'), auto_now_add=True)
     channel = models.ForeignKey('Channel', models.CASCADE, verbose_name=_('channel'))
-    type = models.CharField(_('type'), max_length=16, choices=TYPES)
+    type = models.CharField(_('type'), max_length=16, choices=LOG_TYPES)
+    reason = models.CharField(_('reason'), max_length=64, choices=USERNAME_CHANGE_REASONS, blank=True, null=True)
     value = models.PositiveBigIntegerField(_('value'))
 
     def __str__(self):

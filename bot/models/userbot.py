@@ -9,11 +9,15 @@ class UserBot(models.Model):
     first_name = models.CharField(_('first_name'), max_length=256, blank=True, null=True)
     last_name = models.CharField(_('last_name'), max_length=256, blank=True, null=True)
     phone_number = models.CharField(_('phone_number'), max_length=32, unique=True)
-    ping_time = models.DateTimeField(_('ping_time_utc'), auto_now_add=True)
-    channels = models.ManyToManyField('Channel', verbose_name=_('channels'), blank=True)
+    last_service_message = models.CharField(_('last_service_message'), max_length=4096, blank=True, null=True)
+    last_service_message_date = models.DateTimeField(_('last_service_message_date'), blank=True, null=True)
+
+    @property
+    def fullname(self):
+        return f'{self.first_name} {self.last_name or ''}'.rstrip()
 
     def __str__(self):
-        return str(self.user_id)
+        return self.fullname
 
     class Meta:
         ordering = ('-created',)

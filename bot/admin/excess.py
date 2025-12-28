@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 
 
 class ExcessAdmin(admin.ModelAdmin):
-    list_display = ['created', 'channel_custom', 'type', 'value']
+    list_display = ['created', 'channel_custom', 'type', 'reason', 'value']
     list_per_page = 25
 
     date_hierarchy = 'created'
@@ -12,7 +12,7 @@ class ExcessAdmin(admin.ModelAdmin):
     list_filter = ['channel__title', 'type']
 
     fieldsets = [
-        (_('parameters'), {'fields': ['created', 'channel', 'type', 'value']}),
+        (_('parameters'), {'fields': ['created', 'channel', 'type', 'reason', 'value']}),
     ]
 
     def channel_custom(self, obj):

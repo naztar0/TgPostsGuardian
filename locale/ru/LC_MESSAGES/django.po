@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-11 00:43+0000\n"
+"POT-Creation-Date: 2025-12-27 19:13+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -20,13 +20,17 @@ msgstr ""
 "n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || "
 "(n%100>=11 && n%100<=14)? 2 : 3);\n"
 
-#: app/settings.py:153
+#: app/settings.py:149
 msgid "info"
 msgstr "Информация"
 
-#: app/settings.py:156
+#: app/settings.py:152
 msgid "a_userbots"
 msgstr "👳🏻‍♀ Юзерботы"
+
+#: app/settings.py:156
+msgid "a_userbots_sessions"
+msgstr "💻 Сессии"
 
 #: app/settings.py:160
 msgid "a_logs"
@@ -53,13 +57,17 @@ msgid "management"
 msgstr "Управление"
 
 #: app/settings.py:186
+msgid "a_userbots_configs"
+msgstr "🪪 Конфигурация юзерботов"
+
+#: app/settings.py:190
 msgid "a_channels"
 msgstr "📢 Каналы"
 
-#: app/settings.py:190
+#: app/settings.py:194
 msgid "a_limitations"
 msgstr "📝 Ограничения"
 
-#: app/settings.py:194
+#: app/settings.py:198
 msgid "a_settings"
 msgstr "⚙️ Настройки"

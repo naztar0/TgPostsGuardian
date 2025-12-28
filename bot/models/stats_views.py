@@ -1,11 +1,13 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from bot.models.choices import STATS_VIEWS_TYPES
 
 
 class StatsViews(models.Model):
     created = models.DateTimeField(_('created_utc'), auto_now_add=True)
     channel = models.ForeignKey('Channel', models.CASCADE, verbose_name=_('channel'))
-    language = models.CharField(_('language'), max_length=32, blank=True, null=True)  # NULL means all languages
+    type = models.CharField(_('type'), max_length=32, choices=STATS_VIEWS_TYPES)
+    key = models.CharField(_('key'), max_length=32, blank=True, null=True)  # NULL means all keys
     value = models.PositiveBigIntegerField(_('value'))
 
     def __str__(self):

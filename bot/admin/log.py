@@ -13,7 +13,7 @@ class LogAdmin(admin.ModelAdmin):
 
     fieldsets = [
         (_('parameters'), {'fields': ['userbot', 'type', 'channel', 'post_id', 'post_date', 'post_views', 'reason',
-                                      'success', 'comment', 'error_message']}),
+                                      'limitation', 'success', 'comment', 'error_message']}),
     ]
 
     def user_custom(self, obj):

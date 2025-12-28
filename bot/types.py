@@ -1,21 +1,36 @@
-from bot.utils_lib import helper
+from enum import auto, StrEnum, IntEnum
 
 
-class Log(helper.HelperMode):
-    mode = helper.HelperMode.SCREAMING_SNAKE_CASE
-    DELETION = helper.Item()
-    USERNAME_CHANGE = helper.Item()
+class SessionMode(IntEnum):
+    LISTENER = auto()
+    WORKER = auto()
 
 
-class Limitation(helper.HelperMode):
-    mode = helper.HelperMode.SCREAMING_SNAKE_CASE
-    POST_VIEWS = helper.Item()
-    LANGUAGE_STATS = helper.Item()
+class LogType(StrEnum):
+    DELETION = auto()
+    USERNAME_CHANGE = auto()
 
 
-class UsernameChangeReason(helper.HelperMode):
-    mode = helper.HelperMode.SCREAMING_SNAKE_CASE
-    DELETIONS_LIMIT = helper.Item()
-    LANGUAGE_STATS_VIEWS_LIMIT = helper.Item()
-    LANGUAGE_STATS_VIEWS_DIFFERENCE_LIMIT = helper.Item()
-    THIRD_PARTY_REQUEST = helper.Item()
+class LimitationType(StrEnum):
+    POST_VIEWS = auto()
+    LANGUAGE_STATS = auto()
+    VIEWS_BY_SOURCE_STATS = auto()
+
+
+class LimitationAction(StrEnum):
+    DELETE_POST = auto()
+    CHANGE_USERNAME = auto()
+
+
+class StatsViewsType(StrEnum):
+    LANGUAGE = auto()
+    VIEWS_BY_SOURCE = auto()
+
+
+class UsernameChangeReason(StrEnum):
+    DELETIONS_LIMIT = auto()
+    LANGUAGE_STATS_VIEWS_LIMIT = auto()
+    LANGUAGE_STATS_VIEWS_DIFFERENCE_LIMIT = auto()
+    VIEWS_BY_SOURCE_STATS_LIMIT = auto()
+    VIEWS_BY_SOURCE_STATS_DIFFERENCE_LIMIT = auto()
+    THIRD_PARTY_REQUEST = auto()

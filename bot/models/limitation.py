@@ -1,26 +1,27 @@
 from datetime import datetime, timedelta, timezone
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from bot import types
+from bot.models.choices import LIMITATION_TYPES, LIMITATION_ACTIONS
 
 
 class Limitation(models.Model):
-    TYPES = ((types.Limitation.POST_VIEWS, _('limitation_post_views')),
-             (types.Limitation.LANGUAGE_STATS, _('limitation_language_stats')))
     created = models.DateTimeField(_('created_utc'), auto_now_add=True)
-    channel = models.ForeignKey('Channel', models.CASCADE, verbose_name=_('channel'))
-    type = models.CharField(_('type'), max_length=32, choices=TYPES)
+    title = models.CharField(_('title'), max_length=256)
+    type = models.CharField(_('type'), max_length=32, choices=LIMITATION_TYPES)
+    action = models.CharField(_('action'), max_length=32, choices=LIMITATION_ACTIONS)
     views = models.PositiveBigIntegerField(_('limitation_views'), default=0)
     views_difference = models.PositiveSmallIntegerField(_('limitation_views_difference'), default=0)
     views_difference_interval = models.PositiveSmallIntegerField(_('limitation_views_difference_interval_minutes'), default=60)
-    lang_stats_restrictions = models.TextField(_('lang_stats_restrictions'), max_length=256, blank=True, null=True)
-    lang_stats_restrictions.help_text = _('lang_stats_restrictions_help_text')
+    stats_restrictions = models.TextField(_('stats_restrictions'), blank=True, null=True)
+    stats_restrictions.help_text = _('stats_restrictions_help_text')
     hourly_distribution = models.BooleanField(_('hourly_distribution'), default=False)
     hourly_distribution.help_text = _('hourly_distribution_help_text')
     start_date = models.DateField(_('start_date_utc'), blank=True, null=True)
     end_date = models.DateField(_('end_date_utc'), blank=True, null=True)
     start_after_days = models.PositiveIntegerField(_('start_after_days'), default=0)
     end_after_days = models.PositiveIntegerField(_('end_after_days'), default=0)
+    start_after_limitation = models.ForeignKey('self', models.SET_NULL, verbose_name=_('start_after_limitation'), blank=True, null=True, related_name='start_after_limitation_self')
+    end_after_limitation = models.ForeignKey('self', models.SET_NULL, verbose_name=_('end_after_limitation'), blank=True, null=True, related_name='end_after_limitation_self')
 
     @property
     def priority(self):
@@ -43,7 +44,7 @@ class Limitation(models.Model):
             return self.start_date
         if self.start_after_days:
             return now_date - timedelta(days=self.start_after_days)
-        return datetime(1970, 1, 1).date()
+        return datetime.min.date()
 
     @property
     def end(self):
@@ -55,7 +56,7 @@ class Limitation(models.Model):
         return now_date
 
     def __str__(self):
-        return str(self.channel)
+        return self.title
 
     class Meta:
         ordering = ('-created',)

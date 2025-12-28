@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-11 00:43+0000\n"
+"POT-Creation-Date: 2025-12-28 14:19+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -20,38 +20,67 @@ msgstr ""
 "n%10<=4 && (n%100<12 || n%100>14) ? 1 : n%10==0 || (n%10>=5 && n%10<=9) || "
 "(n%100>=11 && n%100<=14)? 2 : 3);\n"
 
-#: bot/admin/__init__.py:16
+#: bot/admin/__init__.py:18
 msgid "admin_panel"
 msgstr "TgPostsGuardian"
 
-#: bot/admin/channel.py:15 bot/admin/excess.py:15 bot/admin/limitation.py:15
+#: bot/admin/channel.py:22 bot/admin/excess.py:15 bot/admin/limitation.py:14
 #: bot/admin/log.py:15 bot/admin/settings.py:7 bot/admin/stats_views.py:15
+#: bot/admin/userbot.py:15 bot/admin/userbot_config.py:13
+#: bot/admin/userbot_session.py:16
 msgid "parameters"
 msgstr "Параметры"
 
-#: bot/admin/channel.py:24 bot/admin/userbot.py:18 bot/models/channel.py:8
+#: bot/admin/channel.py:31 bot/admin/userbot.py:24 bot/models/channel.py:8
 #: bot/models/userbot.py:8
 msgid "@username"
 msgstr "@юзернейм"
 
-#: bot/admin/channel.py:35 bot/models/channel.py:9
+#: bot/admin/channel.py:39 bot/models/channel.py:9
 msgid "owner"
 msgstr "Владелец"
 
-#: bot/admin/excess.py:24 bot/admin/limitation.py:26 bot/admin/log.py:36
-#: bot/admin/post_check.py:21 bot/admin/stats_views.py:24
-#: bot/models/channel.py:27 bot/models/excess.py:9 bot/models/limitation.py:11
-#: bot/models/log.py:15 bot/models/post_check.py:6 bot/models/stats_views.py:7
+#: bot/admin/channel.py:51 bot/models/channel.py:18 bot/models/channel.py:38
+#: bot/models/limitation.py:64
+msgid "limitations"
+msgstr "Ограничения"
+
+#: bot/admin/excess.py:24 bot/admin/log.py:36 bot/admin/post_check.py:21
+#: bot/admin/stats_views.py:24 bot/models/channel.py:28
+#: bot/models/channel.py:33 bot/models/excess.py:8 bot/models/log.py:10
+#: bot/models/post_check.py:6 bot/models/stats_views.py:8
 msgid "channel"
 msgstr "Канал"
 
-#: bot/admin/limitation.py:30 bot/models/limitation.py:16
-msgid "lang_stats_restrictions"
-msgstr "Ограничения по языковой статистике"
+#: bot/admin/limitation.py:15
+msgid "posts_views_restrictions"
+msgstr "Ограничения по просмотрам постов"
 
-#: bot/admin/log.py:28 bot/models/userbot.py:19
+#: bot/admin/limitation.py:16 bot/models/limitation.py:15
+msgid "stats_restrictions"
+msgstr "Ограничения по статистике"
+
+#: bot/admin/limitation.py:17
+msgid "validity_scope"
+msgstr "Область действия"
+
+#: bot/admin/limitation.py:31 bot/admin/userbot_session.py:37
+#: bot/models/channel.py:29 bot/models/userbot_session.py:9
+msgid "channels"
+msgstr "Каналы"
+
+#: bot/admin/log.py:28 bot/admin/userbot_session.py:25 bot/models/userbot.py:24
+#: bot/models/userbot_config.py:17 bot/models/userbot_session.py:8
 msgid "userbot"
 msgstr "Юзербот"
+
+#: bot/admin/userbot.py:36
+msgid "sessions"
+msgstr "Сессии"
+
+#: bot/admin/userbot_session.py:43 bot/models/userbot_session.py:11
+msgid "ping_time_utc"
+msgstr "🕐 Время пинга, UTC"
 
 #: bot/apps.py:7
 msgid "bot"
@@ -61,7 +90,7 @@ msgstr "Бот"
 msgid "id"
 msgstr "ID"
 
-#: bot/models/channel.py:7
+#: bot/models/channel.py:7 bot/models/limitation.py:9
 msgid "title"
 msgstr "Название"
 
@@ -99,28 +128,95 @@ msgstr ""
 msgid "delete_all_posts_after_days"
 msgstr "Удалять все посты спустя N дней"
 
-#: bot/models/channel.py:28
-msgid "channels"
-msgstr "Каналы"
+#: bot/models/channel.py:34 bot/models/channel.py:37
+#: bot/models/limitation.py:63 bot/models/log.py:15
+msgid "limitation"
+msgstr "Ограничение"
 
-#: bot/models/excess.py:7 bot/models/log.py:7
+#: bot/models/choices.py:6
+msgid "listener"
+msgstr "Слушатель"
+
+#: bot/models/choices.py:7
+msgid "worker"
+msgstr "Рабочий"
+
+#: bot/models/choices.py:11
 msgid "deletion"
 msgstr "🗑️ Удаление"
 
-#: bot/models/excess.py:7 bot/models/log.py:7
+#: bot/models/choices.py:12
 msgid "username_change"
 msgstr "👤 Изменение юзернейма"
 
-#: bot/models/excess.py:8 bot/models/limitation.py:10 bot/models/log.py:12
-#: bot/models/stats_views.py:6 bot/models/userbot.py:6
+#: bot/models/choices.py:16
+msgid "limitation_type_post_views"
+msgstr "👁 Просмотры поста"
+
+#: bot/models/choices.py:17
+msgid "limitation_type_language_stats"
+msgstr "🌐 Языковая статистика"
+
+#: bot/models/choices.py:18
+msgid "limitation_type_views_by_source_stats"
+msgstr "👀 Статистика по источникам просмотров"
+
+#: bot/models/choices.py:22
+msgid "limitation_action_delete_post"
+msgstr "🗑️ Удалить пост"
+
+#: bot/models/choices.py:23
+msgid "limitation_action_change_username"
+msgstr "🔗 Изменить юзернейм"
+
+#: bot/models/choices.py:27
+msgid "stats_views_type_language"
+msgstr "🌐 Язык"
+
+#: bot/models/choices.py:28
+msgid "stats_views_type_views_by_source"
+msgstr "👀 Источник просмотров"
+
+#: bot/models/choices.py:32
+msgid "deletions_limit"
+msgstr "🗑️ Лимит удалений"
+
+#: bot/models/choices.py:33
+msgid "language_stats_views_limit"
+msgstr "📊🌐 Лимит просмотров по языковой статистике"
+
+#: bot/models/choices.py:34
+msgid "language_stats_views_difference_limit"
+msgstr "📊🌐 Лимит разницы просмотров по языковой статистике"
+
+#: bot/models/choices.py:35
+msgid "views_by_source_stats_limit"
+msgstr "📊👀 Лимит просмотров по статистике источников просмотров"
+
+#: bot/models/choices.py:36
+msgid "views_by_source_stats_difference_limit"
+msgstr "📊👀 Лимит разницы просмотров по статистике источников просмотров"
+
+#: bot/models/choices.py:37
+msgid "third_party_request"
+msgstr "🔗 Сторонний запрос"
+
+#: bot/models/excess.py:7 bot/models/limitation.py:8 bot/models/log.py:7
+#: bot/models/stats_views.py:7 bot/models/userbot.py:6
+#: bot/models/userbot_config.py:6 bot/models/userbot_session.py:7
 msgid "created_utc"
 msgstr "🕐 Создано, UTC"
 
-#: bot/models/excess.py:10 bot/models/limitation.py:12 bot/models/log.py:13
+#: bot/models/excess.py:9 bot/models/limitation.py:10 bot/models/log.py:8
+#: bot/models/stats_views.py:9
 msgid "type"
 msgstr "Тип"
 
-#: bot/models/excess.py:11 bot/models/stats_views.py:9
+#: bot/models/excess.py:10 bot/models/log.py:14
+msgid "reason"
+msgstr "Причина"
+
+#: bot/models/excess.py:11 bot/models/stats_views.py:11
 msgid "value"
 msgstr "Значение"
 
@@ -132,117 +228,96 @@ msgstr "Избыток"
 msgid "excesses"
 msgstr "Избытки"
 
-#: bot/models/limitation.py:8
-msgid "limitation_post_views"
-msgstr "👁 Просмотры поста"
+#: bot/models/limitation.py:11
+msgid "action"
+msgstr "Действие"
 
-#: bot/models/limitation.py:9
-msgid "limitation_language_stats"
-msgstr "🌐 Языковая статистика"
-
-#: bot/models/limitation.py:13
+#: bot/models/limitation.py:12
 msgid "limitation_views"
 msgstr "Лимит просмотров"
 
-#: bot/models/limitation.py:14
+#: bot/models/limitation.py:13
 msgid "limitation_views_difference"
 msgstr "Лимит разницы просмотров, %"
 
-#: bot/models/limitation.py:15
+#: bot/models/limitation.py:14
 msgid "limitation_views_difference_interval_minutes"
 msgstr "Интервал проверки разницы просмотров, минут"
 
-#: bot/models/limitation.py:17
-msgid "lang_stats_restrictions_help_text"
+#: bot/models/limitation.py:16
+msgid "stats_restrictions_help_text"
 msgstr ""
-"Список названий языков и количества просмотров, разделенных переносами строк."
+"Список ключей и количества просмотров, разделенных переносами строк."
 "<br>Используйте % для определения процента разницы просмотров для удаления."
-"<br>Используйте * для определения количества просмотров на других языках."
-"<br>Пример:<br>English 1000<br>Ukrainian 20%<br>Russian 5%<br>* 100"
+"<br>Используйте * для определения количества просмотров остальных ключей."
+"<br>Пример:<br><br>English 1000<br>Ukrainian 20%<br>Russian 5%<br>* "
+"100<br><br>—————— ИЛИ ——————<br><br>Followers 1000<br>Search 200<br>URL "
+"100<br>PM 100<br>Channels 100<br>Similar_Channels 100<br>Groups 100<br>Other "
+"5%<br>* 100"
 
-#: bot/models/limitation.py:18
+#: bot/models/limitation.py:17
 msgid "hourly_distribution"
 msgstr "Распределение по часам"
 
-#: bot/models/limitation.py:19
+#: bot/models/limitation.py:18
 msgid "hourly_distribution_help_text"
 msgstr ""
 "Распределять ограничения просмотров по часам. Если включено, ограничения "
 "будут вычисляться так: (ограничение / 24) * текущий час"
 
-#: bot/models/limitation.py:20
+#: bot/models/limitation.py:19
 msgid "start_date_utc"
 msgstr "📆 Дата начала, UTC"
 
-#: bot/models/limitation.py:21
+#: bot/models/limitation.py:20
 msgid "end_date_utc"
 msgstr "📆 Дата окончания, UTC"
 
-#: bot/models/limitation.py:22
+#: bot/models/limitation.py:21
 msgid "start_after_days"
 msgstr "Начать спустя N дней"
 
-#: bot/models/limitation.py:23
+#: bot/models/limitation.py:22
 msgid "end_after_days"
 msgstr "Завершить спустя N дней"
 
-#: bot/models/limitation.py:62
-msgid "limitation"
-msgstr "Ограничение"
+#: bot/models/limitation.py:23
+msgid "start_after_limitation"
+msgstr "Начать после ограничения"
 
-#: bot/models/limitation.py:63
-msgid "limitations"
-msgstr "Ограничения"
-
-#: bot/models/log.py:8
-msgid "deletions_limit"
-msgstr "🗑️ Лимит удалений"
-
-#: bot/models/log.py:9
-msgid "language_stats_views_limit"
-msgstr "📊 Лимит просмотров языковой статистики"
-
-#: bot/models/log.py:10
-msgid "language_stats_views_difference_limit"
-msgstr "📊 Лимит разницы просмотров языковой статистики"
+#: bot/models/limitation.py:24
+msgid "end_after_limitation"
+msgstr "Завершить после ограничения"
 
 #: bot/models/log.py:11
-msgid "third_party_request"
-msgstr "🔗 Сторонний запрос"
-
-#: bot/models/log.py:16
 msgid "post_id"
 msgstr "ID поста"
 
-#: bot/models/log.py:17 bot/models/post_check.py:7
+#: bot/models/log.py:12 bot/models/post_check.py:7
 msgid "post_date_utc"
 msgstr "🕐 Дата публикации, UTC"
 
-#: bot/models/log.py:18
+#: bot/models/log.py:13
 msgid "post_views"
 msgstr "👀 Просмотры поста"
 
-#: bot/models/log.py:19
-msgid "reason"
-msgstr "Причина"
-
-#: bot/models/log.py:20
+#: bot/models/log.py:16
 msgid "comment"
 msgstr "Комментарий"
 
-#: bot/models/log.py:21
+#: bot/models/log.py:17
 msgid "error_message"
 msgstr "Сообщение об ошибке"
 
-#: bot/models/log.py:22
+#: bot/models/log.py:18
 msgid "success"
 msgstr "Успешно"
 
-#: bot/models/log.py:29
+#: bot/models/log.py:25
 msgid "log"
 msgstr "Лог"
 
-#: bot/models/log.py:30
+#: bot/models/log.py:26
 msgid "logs"
 msgstr "Логи"
 
@@ -250,7 +325,7 @@ msgstr "Логи"
 msgid "last_check_utc"
 msgstr "🕐 Последняя проверка, UTC"
 
-#: bot/models/post_check.py:10 bot/models/stats_views.py:17
+#: bot/models/post_check.py:10 bot/models/stats_views.py:19
 msgid "views"
 msgstr "Просмотры"
 
@@ -321,11 +396,11 @@ msgstr "Список"
 msgid "lists"
 msgstr "Списки"
 
-#: bot/models/stats_views.py:8
-msgid "language"
-msgstr "Язык"
+#: bot/models/stats_views.py:10
+msgid "key"
+msgstr "Ключ"
 
-#: bot/models/stats_views.py:16
+#: bot/models/stats_views.py:18
 msgid "view"
 msgstr "Просмотр"
 
@@ -337,14 +412,42 @@ msgstr "Имя"
 msgid "last_name"
 msgstr "Фамилия"
 
-#: bot/models/userbot.py:11
+#: bot/models/userbot.py:11 bot/models/userbot_config.py:7
 msgid "phone_number"
 msgstr "Номер телефона"
 
 #: bot/models/userbot.py:12
-msgid "ping_time_utc"
-msgstr "🕐 Время пинга, UTC"
+msgid "last_service_message"
+msgstr "Последнее сервисное сообщение"
 
-#: bot/models/userbot.py:20
+#: bot/models/userbot.py:13
+msgid "last_service_message_date"
+msgstr "🕐 Последнее сервисное сообщение, UTC"
+
+#: bot/models/userbot.py:25 bot/models/userbot_config.py:18
 msgid "userbots"
 msgstr "Юзерботы"
+
+#: bot/models/userbot_config.py:8
+msgid "password"
+msgstr "Пароль"
+
+#: bot/models/userbot_config.py:9
+msgid "worker_instances"
+msgstr "Рабочих сессий"
+
+#: bot/models/userbot_config.py:10
+msgid "is_active"
+msgstr "Активен"
+
+#: bot/models/userbot_session.py:10
+msgid "mode"
+msgstr "Режим"
+
+#: bot/models/userbot_session.py:19
+msgid "userbot_session"
+msgstr "Сессия"
+
+#: bot/models/userbot_session.py:20
+msgid "userbot_sessions"
+msgstr "Сессии"

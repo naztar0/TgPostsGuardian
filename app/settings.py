@@ -35,10 +35,6 @@ ALLOWED_HOSTS = [WEBHOOK_DOMAIN, '127.0.0.1', 'localhost']
 CSRF_TRUSTED_ORIGINS = [f'https://{WEBHOOK_DOMAIN}']
 BOT_DEVS = [BOT_ADMINS[0]]
 
-USERBOT_PN_LIST = env.list('USERBOT_PN_LIST', default=[])
-USERBOT_HOST_LIST = env.list('USERBOT_HOST_LIST', default=[])
-
-HOST_FUNC_COUNT = 2
 MAX_SLEEP_TIME = 600
 
 
@@ -157,6 +153,10 @@ ADMIN_REORDER = [
                 'model': 'bot.UserBot'
             },
             {
+                'label': _('a_userbots_sessions'),
+                'model': 'bot.UserBotSession'
+            },
+            {
                 'label': _('a_logs'),
                 'model': 'bot.Log'
             },
@@ -182,6 +182,10 @@ ADMIN_REORDER = [
         'app': 'bot',
         'label': _('management'),
         'models': [
+            {
+                'label': _('a_userbots_configs'),
+                'model': 'bot.UserBotConfig'
+            },
             {
                 'label': _('a_channels'),
                 'model': 'bot.Channel'

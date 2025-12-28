@@ -15,14 +15,24 @@ class Channel(models.Model):
     deletions_count_for_username_change = models.PositiveSmallIntegerField(_('deletions_count_for_username_change'), default=0)
     deletions_count_for_username_change.help_text = _('deletions_count_for_username_change_help_text')
     delete_posts_after_days = models.PositiveSmallIntegerField(_('delete_all_posts_after_days'), default=90)
+    limitations = models.ManyToManyField('Limitation', verbose_name=_('limitations'), through='ChannelLimitation', blank=True)
 
     @property
     def v2_id(self):
         return int(f'-100{self.channel_id}')
 
     def __str__(self):
-        return str(self.title)
+        return str(self.title or self.channel_id)
 
     class Meta:
         verbose_name = _('channel')
         verbose_name_plural = _('channels')
+
+
+class ChannelLimitation(models.Model):
+    channel = models.ForeignKey(Channel, models.CASCADE, verbose_name=_('channel'))
+    limitation = models.ForeignKey('Limitation', models.CASCADE, verbose_name=_('limitation'))
+
+    class Meta:
+        verbose_name = _('limitation')
+        verbose_name_plural = _('limitations')

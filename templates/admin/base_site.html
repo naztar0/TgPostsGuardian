@@ -36,6 +36,7 @@
 
 {% block extrastyle %}{{ block.super }}
 <style>
+    a { text-decoration: none !important; }
     .skip-to-content-link { display: none; }
     .btn-link {
         padding: 0;
@@ -58,6 +59,42 @@
         }
         #set_language {
             margin-top: 10px;
+        }
+    }
+    ol.compact {
+        margin: 0;
+        padding-inline-start: 16px;
+    }
+    .inline-group .tabular {
+        & tr.has_original td {
+            padding-top: 8px !important;
+        }
+        & .original {
+            display: none;
+        }
+        & td {
+            vertical-align: middle;
+        }
+        & .related-widget-wrapper {
+            margin-bottom: 0;
+            display: flex;
+            align-items: center;
+        }
+        & .delete div {
+            display: flex;
+            justify-content: start;
+        }
+    }
+    .checkbox-row {
+        flex-direction: row-reverse;
+        justify-content: start;
+
+        & label {
+            padding: 4px 10px 6px 0 !important;
+            width: 160px !important;
+        }
+        & input {
+            margin: 0;
         }
     }
 </style>

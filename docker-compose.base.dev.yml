@@ -3,7 +3,6 @@ x-service-base: &service_base
     dockerfile: Dockerfile.dev
   volumes:
     - .:/app:delegated
-    - ./sessions:/usr/sessions
   extra_hosts:
     - 'host.docker.internal:host-gateway'
   networks:

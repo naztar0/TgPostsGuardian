@@ -5,7 +5,7 @@ from telethon.tl.functions.stats import LoadAsyncGraphRequest
 
 async def _get_graphs(request, sndr, graph_request_types):
     result: types.stats.BroadcastStats = await sndr(request)
-    graphs = []
+    graphs: list[types.StatsGraph] = []
     for req_type in graph_request_types:
         token = getattr(result, req_type).token
         request = LoadAsyncGraphRequest(token)

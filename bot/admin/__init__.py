@@ -11,6 +11,8 @@ from .post_check import PostCheckAdmin
 from .settings import SettingsAdmin
 from .stats_views import StatsViewsAdmin
 from .userbot import UserBotAdmin
+from .userbot_config import UserBotConfigAdmin
+from .userbot_session import UserBotSessionAdmin
 
 
 admin.site.site_header = admin.site.site_title = _('admin_panel')
@@ -29,3 +31,5 @@ admin.site.register(models.PostCheck, PostCheckAdmin)
 admin.site.register(models.Settings, SettingsAdmin)
 admin.site.register(models.StatsViews, StatsViewsAdmin)
 admin.site.register(models.UserBot, UserBotAdmin)
+admin.site.register(models.UserBotConfig, UserBotConfigAdmin)
+admin.site.register(models.UserBotSession, UserBotSessionAdmin)

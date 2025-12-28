@@ -1,9 +1,31 @@
 import logging
 import asyncio
-import os
 from django.core.management.base import BaseCommand
-from app.settings import USERBOT_PN_LIST, USERBOT_HOST_LIST, SESSIONS_DIR
 from bot import login, models
+
+
+async def handle(**options):
+    logging.info('Initializing')
+
+    userbot_configs = [x async for x in models.UserBotConfig.objects.all()]
+    active_userbot_configs = [x for x in userbot_configs if x.is_active]
+    numbers = [x.phone_number for x in userbot_configs]
+
+    async for user in models.UserBot.objects.all():
+        if user.phone_number not in numbers:
+            logging.warning(f'Removing old userbot {user.phone_number}')
+            await user.adelete()
+
+    for i, userbot_config in enumerate(active_userbot_configs):
+        logging.warning(f'[{i}]: {userbot_config.phone_number}')
+        try:
+            await login.init_instances(
+                userbot_config,
+                options['skip_codes'],
+                options['remove_skipped']
+            )
+        except login.SkipCode:
+            logging.warning('Code skipped')
 
 
 class Command(BaseCommand):
@@ -12,24 +34,4 @@ class Command(BaseCommand):
         parser.add_argument('--remove-skipped', action='store_true')
 
     def handle(self, *args, **options):
-        logging.info('Initializing')
-        for file in os.listdir(SESSIONS_DIR):
-            if file.endswith('-journal'):
-                logging.warning(f'Removing journal {file}')
-                os.remove(SESSIONS_DIR / file)
-        for user in models.UserBot.objects.all():
-            if user.phone_number not in USERBOT_HOST_LIST and user.phone_number not in USERBOT_PN_LIST:
-                logging.warning(f'Removing old userbot {user.phone_number}')
-                user.delete()
-        for i, phone_number in enumerate(USERBOT_PN_LIST):
-            logging.warning(f'[{i}]: {phone_number}')
-            try:
-                asyncio.run(login.initialize(phone_number, False, options['skip_codes'], options['remove_skipped']))
-            except login.SkipCode:
-                logging.warning('Code skipped')
-        for i, phone_number in enumerate(USERBOT_HOST_LIST):
-            logging.warning(f'[{i}]: {phone_number}')
-            try:
-                asyncio.run(login.initialize(phone_number, True, options['skip_codes'], options['remove_skipped']))
-            except login.SkipCode:
-                logging.warning('Code skipped')
+        asyncio.run(handle(**options))
