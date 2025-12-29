@@ -254,13 +254,13 @@ class App:
                 await make_log_entry(True)
                 return new_username
             except UsernameOccupiedError:
-                logging.warning(f'Username {new_username} is occupied'
+                logging.warning(f'Username {new_username} is occupied. '
                                 f'Channel: {channel.title}, reason: {reason}, limitation: {limitation}')
                 await make_log_entry(False, f'Username occupied ({new_username})')
                 await sleep(5)
             except ChatAdminRequiredError:
-                logging.warning(f'Admin rights required. '
-                                f'Channel: {channel.title}, reason: {reason}, limitation: {limitation}')
+                logging.error(f'Admin rights required. '
+                              f'Channel: {channel.title}, reason: {reason}, limitation: {limitation}')
                 await make_log_entry(False, 'Admin rights required')
                 return None
             except FloodWaitError as e:
