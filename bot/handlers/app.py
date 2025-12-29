@@ -19,8 +19,13 @@ from telethon.tl.functions.account import UpdateStatusRequest, SetAccountTTLRequ
 from telethon.tl.functions.messages import GetDialogFiltersRequest, ImportChatInviteRequest, CheckChatInviteRequest, GetFullChatRequest
 from telethon.tl.functions.channels import EditAdminRequest, UpdateUsernameRequest, GetAdminedPublicChannelsRequest
 from telethon.tl.functions.chatlists import JoinChatlistInviteRequest, CheckChatlistInviteRequest, LeaveChatlistRequest
-from telethon.errors import ChatAdminRequiredError, MessageNotModifiedError, FloodWaitError, UsernameOccupiedError
-from telethon.errors.rpcerrorlist import FreshResetAuthorisationForbiddenError
+from telethon.errors import (
+    ChatAdminRequiredError,
+    MessageNotModifiedError,
+    FloodWaitError,
+    UsernameOccupiedError,
+    FreshResetAuthorisationForbiddenError,
+)
 
 from app.settings import API_ID, API_HASH, MAX_SLEEP_TIME
 from bot import models, utils
@@ -221,10 +226,22 @@ class App:
             self,
             channel: models.Channel,
             reason: UsernameChangeReason,
-            limitation: models.Limitation,
+            limitation: models.Limitation | None,
             comment: str,
             ignore_wait=False,
     ):
+        async def make_log_entry(success: bool, error_message: str = None):
+            await models.Log.objects.acreate(
+                type=LogType.USERNAME_CHANGE,
+                userbot=self.userbot,
+                channel=channel,
+                success=success,
+                reason=reason,
+                limitation=limitation,
+                comment=comment,
+                error_message=error_message
+            )
+
         sl = (await models.Settings.objects.aget()).username_suffix_length or 1
         for _ in range(3):
             new_username = utils.rand_username(channel.username, sl)
@@ -234,35 +251,28 @@ class App:
                 channel.username = new_username
                 channel.last_username_change = datetime.now(timezone.utc)
                 await channel.asave()
-                await models.Log.objects.acreate(
-                    type=LogType.USERNAME_CHANGE,
-                    userbot=self.userbot,
-                    channel=channel,
-                    reason=reason,
-                    limitation=limitation,
-                    comment=comment
-                )
+                await make_log_entry(True)
                 return new_username
             except UsernameOccupiedError:
-                logging.warning(f'Username {new_username} is occupied')
+                logging.warning(f'Username {new_username} is occupied'
+                                f'Channel: {channel.title}, reason: {reason}, limitation: {limitation}')
+                await make_log_entry(False, f'Username occupied ({new_username})')
                 await sleep(5)
+            except ChatAdminRequiredError:
+                logging.warning(f'Admin rights required. '
+                                f'Channel: {channel.title}, reason: {reason}, limitation: {limitation}')
+                await make_log_entry(False, 'Admin rights required')
+                return None
             except FloodWaitError as e:
-                logging.warning(f'Flood wait {e.seconds} seconds')
-                await models.Log.objects.acreate(
-                    type=LogType.USERNAME_CHANGE,
-                    userbot=self.userbot,
-                    channel=channel,
-                    success=False,
-                    reason=reason,
-                    limitation=limitation,
-                    comment=comment,
-                    error_message=str(e)[-256:]
-                )
+                logging.warning(f'Flood wait {e.seconds} seconds. '
+                                f'Channel: {channel.title}, reason: {reason}, limitation: {limitation}')
+                await make_log_entry(False, f'Flood wait {e.seconds} seconds')
                 if not ignore_wait:
                     await sleep(min(e.seconds, MAX_SLEEP_TIME))
                 return None
             except Exception as e:
                 logging.critical(e)
+                await make_log_entry(False, str(e))
                 if not ignore_wait:
                     await sleep(60)
         return None
